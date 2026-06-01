@@ -1222,7 +1222,7 @@ async function loadSheetData() {
       // Merge: sheet wins for any ISP that exists in both; keep local-only ISPs too
       const sheetIds = new Set(d.isps.map(i => i.id));
       const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
-      state.isps = [...d.isps, ...localOnly];
+      state.isps = deduplicateISPs([...d.isps, ...localOnly]);
       saveISPs();
       renderDashboard();
     }
@@ -1720,18 +1720,33 @@ function applyFilters() {
 
 /* ── Dashboard ── */
 function deduplicateISPs(isps) {
-  // One row per student: keep the most recently edited version
-  const map = new Map();
+  // One row per student: deduplicate by arborId first, then name as fallback.
+  // Keep the most recently edited version.
+  const byArborId = new Map();
+  const byName    = new Map();
+  const result    = [];
   for (const isp of isps) {
-    const key = isp.arborId || isp.name || isp.id;
-    if (!key) continue;
-    const existing = map.get(key);
-    if (!existing) { map.set(key, isp); continue; }
-    const a = existing.lastEdited ? new Date(existing.lastEdited).getTime() : 0;
-    const b = isp.lastEdited     ? new Date(isp.lastEdited).getTime()     : 0;
-    if (b > a) map.set(key, isp);
+    const arborKey = isp.arborId ? String(isp.arborId) : null;
+    const nameKey  = (isp.name || '').trim().toLowerCase();
+    // Check for existing match by arborId OR name
+    const existing = (arborKey && byArborId.get(arborKey)) || (nameKey && byName.get(nameKey));
+    const ts = isp.lastEdited ? new Date(isp.lastEdited).getTime() : 0;
+    if (existing) {
+      const ets = existing.lastEdited ? new Date(existing.lastEdited).getTime() : 0;
+      if (ts > ets) {
+        // Replace with newer version
+        const ri = result.indexOf(existing);
+        if (ri >= 0) result.splice(ri, 1, isp);
+        if (arborKey) byArborId.set(arborKey, isp);
+        if (nameKey)  byName.set(nameKey, isp);
+      }
+    } else {
+      result.push(isp);
+      if (arborKey) byArborId.set(arborKey, isp);
+      if (nameKey)  byName.set(nameKey, isp);
+    }
   }
-  return [...map.values()];
+  return result;
 }
 
 function renderDashboard() {
