@@ -2305,7 +2305,7 @@ function renderStep1(el) {
     <div class="field">
       <label>Which development areas apply to this student?</label>
       <div class="chip-group">
-        ${areas.map(k => `<button class="chip area-chip ${fd.areas.includes(k)?'selected':''}" data-key="${k}" onclick="toggleArea(this)">${areaIconHTML(k)} ${AREA_LABELS[k]}</button>`).join('')}
+        ${areas.map(k => `<button class="chip area-chip ${fd.areas.includes(k)?'selected':''}" data-key="${k}" onclick="toggleArea(this)">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</button>`).join('')}
       </div>
     </div>
     <div id="area-detail-panels"></div>`;
@@ -2345,7 +2345,7 @@ function renderAreaPanels() {
     return `
     <div class="dev-card" style="border-left:4px solid ${color}">
       <div class="dev-card-header">
-        <span class="dev-card-title">${areaIconHTML(k)} ${AREA_LABELS[k]}</span>
+        <span class="dev-card-title">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</span>
         <span class="dev-chip" style="background:${color}18;color:${color};border:none">${k}</span>
       </div>
       <div class="row-2">
@@ -2478,7 +2478,7 @@ function renderTargetSelectors() {
     return `
     <div class="dev-card" style="border-left:4px solid ${color};margin-bottom:1rem" id="tblock-${k}">
       <div class="dev-card-header">
-        <span class="dev-card-title">${areaIconHTML(k)} ${AREA_LABELS[k]}</span>
+        <span class="dev-card-title">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</span>
         <span class="dev-chip" style="background:${color}18;color:${color};border:none">Target ${ai+1}</span>
       </div>
 
@@ -2956,13 +2956,13 @@ function vsOverview(isp, idx) {
     const color = AREA_COLOR[k] || 'var(--teal)';
     const bg    = AREA_BG[k]    || color+'14';
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 14px;border-radius:var(--radius);background:${bg};border:1.5px solid ${color}50;min-width:84px">
-      ${areaIconHTML(k,'lg')}
+      <span style="font-size:22px;line-height:1">${AREA_ICON[k]||'●'}</span>
       <span style="font-size:11px;font-weight:700;color:${color};text-align:center;line-height:1.3">${AREA_LABELS[k]}</span>
     </div>`;
   }).join('');
 
   const riskFlagHTML = (isp.riskFlags||[]).length
-    ? `<div style="position:relative;padding-top:4px"><span style="position:absolute;top:0;right:0;font-size:14px;line-height:1" title="Risk alerts present">🔴</span>${
+    ? `<div style="position:relative;padding-top:4px"><span style="position:absolute;top:0;right:0;font-size:13px;line-height:1;color:#D32F2F" title="Risk alerts present">&#9888;</span>${
         RISK_FLAGS.filter(f=>(isp.riskFlags||[]).includes(f.key)).map(f =>
           `<div style="display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:var(--radius);border:1.5px solid #c0c0c0;background:#f5f5f5;margin-bottom:5px">
             <span style="font-size:16px;line-height:1;filter:grayscale(1)">${f.icon}</span>
@@ -3121,7 +3121,7 @@ function vsStrategies(isp, idx) {
   const seatingLines = (isp.areas||[]).map(k => {
     const seat = (isp.seating&&isp.seating[k]) || '';
     if (!seat) return '';
-    return `<div style="font-size:13px;margin-bottom:3px"><span style="font-weight:700;color:${AREA_COLOR[k]}">${areaIconHTML(k)} ${AREA_LABELS[k]}:</span> ${seat}</div>`;
+    return `<div style="font-size:13px;margin-bottom:3px"><span style="font-weight:700;color:${AREA_COLOR[k]}">${AREA_ICON[k]||''} ${AREA_LABELS[k]}:</span> ${seat}</div>`;
   }).filter(Boolean);
 
   const strategiesHTML = (isp.areas||[]).map(k => {
@@ -3130,7 +3130,7 @@ function vsStrategies(isp, idx) {
     const color = AREA_COLOR[k];
     const bg    = AREA_BG[k] || color+'14';
     return `<div style="margin-bottom:8px;padding:10px 14px;border-radius:var(--radius);border-left:3px solid ${color};background:${bg}">
-      <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">${areaIconHTML(k)} ${AREA_LABELS[k]}</div>
+      <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</div>
       <div style="font-size:13px;line-height:1.6">${strat}</div>
     </div>`;
   }).filter(Boolean).join('');
@@ -3296,7 +3296,7 @@ function editViewAreas(idx) {
         ${currentAreas.length ? currentAreas.map(k => `
           <div id="area-row-${k}" style="margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius)">
-              <span style="display:inline-flex;align-items:center;line-height:1">${areaIconHTML(k,'lg')}</span>
+              <span style="font-size:20px;line-height:1">${AREA_ICON[k]||''}</span>
               <span style="font-size:13px;font-weight:600;flex:1;color:${AREA_COLOR[k]||'var(--text)'}">${AREA_LABELS[k]||k}</span>
               <button id="remove-btn-${k}" class="btn-danger" style="font-size:12px" onclick="showAreaRemovalForm('${k}',${idx})">Remove area</button>
             </div>
@@ -3322,7 +3322,7 @@ function editViewAreas(idx) {
           <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
             <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Add an area</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
-              ${available.map(k=>`<button class="btn-secondary" style="font-size:13px;display:flex;align-items:center;gap:6px" onclick="addAreaOfNeed('${k}',${idx})">${areaIconHTML(k)} ${AREA_LABELS[k]||k}</button>`).join('')}
+              ${available.map(k=>`<button class="btn-secondary" style="font-size:13px;display:flex;align-items:center;gap:6px" onclick="addAreaOfNeed('${k}',${idx})"><span>${AREA_ICON[k]||''}</span> ${AREA_LABELS[k]||k}</button>`).join('')}
             </div>
           </div>` : ''}
 
@@ -3780,7 +3780,7 @@ function renderISPPreview(idx) {
     const color = AREA_COLOR[k] || '#555';
     const bg    = AREA_BG[k]    || color+'14';
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:var(--radius);background:${bg};border:1.5px solid ${color}50;min-width:90px">
-      ${areaIconHTML(k,'lg')}
+      <span style="font-size:22px;line-height:1">${AREA_ICON[k]||'●'}</span>
       <span style="font-size:11px;font-weight:700;color:${color};text-align:center;line-height:1.3">${AREA_LABELS[k]}</span>
     </div>`;
   }).join('');
@@ -3792,7 +3792,7 @@ function renderISPPreview(idx) {
     const color = AREA_COLOR[k];
     const bg    = AREA_BG[k] || color+'14';
     return `<div style="margin-bottom:10px;padding:10px 14px;border-radius:var(--radius);border-left:3px solid ${color};background:${bg}">
-      <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">${areaIconHTML(k)} ${AREA_LABELS[k]}</div>
+      <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</div>
       <div style="font-size:13px">${strat}</div>
     </div>`;
   }).filter(Boolean).join('');
@@ -3801,7 +3801,7 @@ function renderISPPreview(idx) {
   const seatingLines = (isp.areas||[]).map(k => {
     const seat = (isp.seating&&isp.seating[k]) || '';
     if (!seat) return '';
-    return `<div style="font-size:13px;margin-bottom:3px"><span style="font-weight:700;color:${AREA_COLOR[k]}">${areaIconHTML(k)} ${AREA_LABELS[k]}:</span> ${seat}</div>`;
+    return `<div style="font-size:13px;margin-bottom:3px"><span style="font-weight:700;color:${AREA_COLOR[k]}">${AREA_ICON[k]||''} ${AREA_LABELS[k]}:</span> ${seat}</div>`;
   }).filter(Boolean);
   const seatingMaster = seatingLines.length
     ? seatingLines.join('')
@@ -3894,7 +3894,7 @@ function renderISPPreview(idx) {
         </tr></thead>
         <tbody>
           ${(isp.areas||[]).map(k=>`<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:10px 1.25rem;vertical-align:top;font-size:13px;font-weight:600;white-space:nowrap">${areaIconHTML(k)} ${AREA_LABELS[k]||k}</td>
+            <td style="padding:10px 1.25rem;vertical-align:top;font-size:13px;font-weight:600;white-space:nowrap">${AREA_ICON[k]||''} ${AREA_LABELS[k]||k}</td>
             <td style="padding:10px 1.25rem;font-size:13px;vertical-align:top">${(isp.strengths&&isp.strengths[k])||'—'}</td>
             <td style="padding:10px 1.25rem;font-size:13px;vertical-align:top">${(isp.needs&&isp.needs[k])||'—'}</td>
             <td style="padding:10px 1.25rem;font-size:13px;vertical-align:top;color:var(--muted)">${(isp.advice&&isp.advice[k])||'—'}</td>
@@ -3915,7 +3915,7 @@ function renderISPPreview(idx) {
           ${targets.map((t,i)=>{
             const p=(isp.provisions&&isp.provisions[i])||{};
             return `<tr style="border-bottom:1px solid var(--border)">
-              <td style="padding:10px 1rem;font-size:13px;font-weight:600;vertical-align:top;white-space:nowrap">${(()=>{const ak=isp.areas?.find(k=>AREA_LABELS[k]===t.area);return ak?areaIconHTML(ak):'';})()}&nbsp;${t.area}</td>
+              <td style="padding:10px 1rem;font-size:13px;font-weight:600;vertical-align:top;white-space:nowrap">${AREA_ICON[isp.areas?.find(k=>AREA_LABELS[k]===t.area)||'']||''} ${t.area}</td>
               <td style="padding:10px 1rem;font-size:13px;vertical-align:top">${t.outcome}</td>
               <td style="padding:10px 1rem;font-size:13px;vertical-align:top;color:var(--muted)">${t.smart}</td>
               <td style="padding:10px 1rem;font-size:13px;vertical-align:top">${p.desc||'—'}</td>
@@ -4034,7 +4034,7 @@ function buildISPPDF(src) {
     const c = CPDF[k]||'#555';
     const bg = AREA_BG[k]||c+'12';
     return `<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:8px 12px;border-radius:5px;border:1.5px solid ${c}55;background:${bg};margin:0 5px 5px 0;min-width:72px;text-align:center;vertical-align:top">
-      <span style="color:${c};display:inline-flex;align-items:center;line-height:1">${AREA_ICON_SVG[k]||'●'}</span>
+      <span style="font-size:20px;line-height:1">${AREA_ICON[k]||'●'}</span>
       <span style="font-size:9px;font-weight:700;color:${c};line-height:1.2">${AREA_LABELS[k]||k}</span>
     </div>`;
   }).join('');
@@ -4043,13 +4043,13 @@ function buildISPPDF(src) {
     const strat = (src.strategies&&src.strategies[k])||''; if (!strat) return '';
     const c = CPDF[k]||'#555';
     const bg = AREA_BG[k]||c+'08';
-    return `<div style="margin-bottom:8px;padding:7px 10px;border-left:3px solid ${c};background:${bg}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${c};margin-bottom:3px;display:flex;align-items:center;gap:4px"><span style="color:${c};display:inline-flex;align-items:center">${AREA_ICON_SM[k]||''}</span>${AREA_LABELS[k]||k}</div><div style="font-size:11px">${strat}</div></div>`;
+    return `<div style="margin-bottom:8px;padding:7px 10px;border-left:3px solid ${c};background:${bg}"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:${c};margin-bottom:3px">${AREA_ICON[k]||''} ${AREA_LABELS[k]||k}</div><div style="font-size:11px">${strat}</div></div>`;
   }).filter(Boolean).join('') || '<p style="font-size:11px;color:#999;font-style:italic">No strategies recorded.</p>';
 
   const seatingHtml = (src.areas||[]).map(k => {
     const seat = (src.seating&&src.seating[k])||''; if (!seat) return '';
     const c = CPDF[k]||'#555';
-    return `<div style="font-size:11px;margin-bottom:3px"><strong style="color:${c};display:inline-flex;align-items:center;gap:3px"><span style="color:${c};display:inline-flex;align-items:center">${AREA_ICON_SM[k]||''}</span>${AREA_LABELS[k]||k}:</strong> ${seat}</div>`;
+    return `<div style="font-size:11px;margin-bottom:3px"><strong style="color:${c}">${AREA_ICON[k]||''} ${AREA_LABELS[k]||k}:</strong> ${seat}</div>`;
   }).filter(Boolean).join('') || '<p style="font-size:11px;color:#999;font-style:italic">No specific seating advice recorded.</p>';
 
   const th = (txt, w) => `<th style="padding:6px 8px;background:#0F6E56;color:white;text-align:left;font-size:11px;border:1px solid #0a5040${w?';width:'+w:''}">${txt}</th>`;
@@ -4115,7 +4115,7 @@ function buildISPPDF(src) {
 
     ${src.areas&&src.areas.length?`<div style="page-break-inside:avoid;margin-bottom:14px">
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#666;margin-bottom:6px">Areas of need</div>
-      <div>${(src.areas||[]).map(k=>{const c=CPDF[k]||'#555';const bg=AREA_BG[k]||c+'10';return`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:7px 11px;border-radius:4px;border:1.5px solid ${c}55;background:${bg};margin:0 5px 5px 0;min-width:68px;text-align:center;vertical-align:top"><span style="color:${c};display:inline-flex;align-items:center;line-height:1">${AREA_ICON_SVG[k]||'●'}</span><span style="font-size:9px;font-weight:700;color:${c};line-height:1.2">${AREA_LABELS[k]||k}</span></div>`;}).join('')}</div>
+      <div>${(src.areas||[]).map(k=>{const c=CPDF[k]||'#555';const bg=AREA_BG[k]||c+'10';return`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:7px 11px;border-radius:4px;border:1.5px solid ${c}55;background:${bg};margin:0 5px 5px 0;min-width:68px;text-align:center;vertical-align:top"><span style="font-size:18px;line-height:1">${AREA_ICON[k]||'●'}</span><span style="font-size:9px;font-weight:700;color:${c};line-height:1.2">${AREA_LABELS[k]||k}</span></div>`;}).join('')}</div>
     </div>`:''}
 
     ${src.summary?`<div style="page-break-inside:avoid"><table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tr>${th('Student summary','')}</tr><tr><td style="padding:8px;border:1px solid #ccc;font-size:11px;line-height:1.5">${src.summary}</td></tr></table></div>`:''}
