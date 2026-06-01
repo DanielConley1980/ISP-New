@@ -1324,49 +1324,88 @@ function selectStudent(arborId) {
   const eal      = sheetVal(s, 'EAL') || '—';
   const lead     = sheetVal(s, 'Lead Responsible', 'Lead') || '—';
 
+  // Normalise attendance values: if stored as decimal (e.g. 0.816), convert to percentage
+  function normAtt(v) {
+    const n = parseFloat(v);
+    if (isNaN(n)) return null;
+    return n > 0 && n <= 1 ? Math.round(n * 1000) / 10 : Math.round(n * 10) / 10;
+  }
+  const attThisN = normAtt(attThis);
+  const attLastN = normAtt(attLast);
+  const attDelta = (attThisN !== null && attLastN !== null) ? (attThisN - attLastN) : null;
+  const fmtAtt   = n => n !== null ? n.toFixed(1) + '%' : '—';
+  const attDeltaStr = attDelta !== null ? (attDelta >= 0 ? `+${attDelta.toFixed(1)}%` : `${attDelta.toFixed(1)}%`) : null;
+  const attDeltaCol = attDelta !== null ? (attDelta >= 0 ? '#27ae60' : '#c0392b') : '#888';
+
   // Behaviour points: green if ≥ 0, red if negative
-  const bpNum  = parseFloat(bp);
+  const bpNum   = parseFloat(bp);
   const bpColor = isNaN(bpNum) ? '#555' : bpNum < 0 ? '#c0392b' : '#27ae60';
 
-  // Attendance % change between terms
-  const attLastNum = parseFloat(attLast);
-  const attThisNum = parseFloat(attThis);
-  const attDelta   = (!isNaN(attLastNum) && !isNaN(attThisNum)) ? (attThisNum - attLastNum).toFixed(1) : null;
-  const attDeltaStr = attDelta !== null ? (parseFloat(attDelta) >= 0 ? `+${attDelta}%` : `${attDelta}%`) : '';
-  const attDeltaCol = attDelta !== null ? (parseFloat(attDelta) >= 0 ? '#27ae60' : '#c0392b') : '#888';
-
-  // Suspensions difference (days)
-  const susThisNum = parseFloat(susThis);
-  const susLastNum = parseFloat(susLast);
-  const susDiff    = (!isNaN(susThisNum) && !isNaN(susLastNum)) ? (susThisNum - susLastNum) : null;
-  const susDiffStr = susDiff !== null ? (susDiff >= 0 ? `+${susDiff}d` : `${susDiff}d`) : '';
+  // Suspensions difference
+  const susThisN = parseFloat(susThis);
+  const susLastN = parseFloat(susLast);
+  const susDiff  = (!isNaN(susThisN) && !isNaN(susLastN)) ? (susThisN - susLastN) : null;
+  const susDiffStr = susDiff !== null ? (susDiff >= 0 ? `+${susDiff}` : `${susDiff}`) : null;
   const susDiffCol = susDiff !== null ? (susDiff > 0 ? '#c0392b' : '#27ae60') : '#888';
 
-  function misCard(mainVal, label, color, sub1='', sub2='', sub2col='#888') {
-    return `<div style="background:var(--surface);border-radius:var(--radius);padding:8px 10px;text-align:center;border:1px solid var(--border)">
-      <div style="font-size:18px;font-weight:800;color:${color}">${mainVal}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:2px">${label}</div>
-      ${sub1 ? `<div style="font-size:9px;color:#888;margin-top:3px;line-height:1.3">${sub1}</div>` : ''}
-      ${sub2 ? `<div style="font-size:9px;font-weight:700;color:${sub2col};margin-top:1px">${sub2}</div>` : ''}
+  function travelCard(val, label, accentColor) {
+    return `<div style="background:var(--surface);border-radius:var(--radius);padding:10px 14px;text-align:center;border:1px solid var(--border);flex:1;min-width:70px">
+      <div style="font-size:22px;font-weight:800;color:${accentColor};line-height:1.1">${val}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${label}</div>
     </div>`;
   }
-
-  const attDisplay = attThis || pct || '—';
-  const attSub1 = attLast ? `Last: ${attLast}% → Now: ${attThis}%` : '';
+  function deltaChip(str, col) {
+    if (!str) return '';
+    return `<div style="display:flex;align-items:center;justify-content:center;padding:0 6px">
+      <span style="font-size:13px;font-weight:800;color:${col};background:${col}18;border:1.5px solid ${col}40;border-radius:20px;padding:4px 10px;white-space:nowrap">${str}</span>
+    </div>`;
+  }
+  function arrow() {
+    return `<div style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:18px;padding:0 2px">→</div>`;
+  }
+  function misSectionLabel(txt) {
+    return `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">${txt}</div>`;
+  }
 
   const infoCard = document.getElementById('student-info-card');
   infoCard.style.display = 'block';
   infoCard.innerHTML = `
     <div style="padding:1rem 1.25rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Live data from MIS</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-        ${misCard(attDisplay ? attDisplay+'%' : '—', 'Attendance', '#444', attSub1, attDeltaStr, attDeltaCol)}
-        ${misCard(bp, 'Behaviour Pts', bpColor)}
-        ${misCard(susThis, 'Suspensions', '#c0392b',
-            susLast !== '—' ? `Last yr: ${susLast} · This yr: ${susThis}` : '',
-            susDiffStr, susDiffCol)}
-        ${misCard(intEx, 'Internal Excl.', '#e67e22')}
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px">Live data from MIS</div>
+
+      <!-- Attendance row -->
+      <div style="margin-bottom:14px">
+        ${misSectionLabel('Attendance')}
+        <div style="display:flex;align-items:center;gap:0">
+          ${attLastN !== null ? travelCard(fmtAtt(attLastN), 'Last Term', '#444') + arrow() : ''}
+          ${travelCard(fmtAtt(attThisN), attLastN !== null ? 'This Term' : 'Attendance', '#444')}
+          ${deltaChip(attDeltaStr, attDeltaCol)}
+        </div>
       </div>
+
+      <!-- Suspensions row -->
+      <div style="margin-bottom:14px">
+        ${misSectionLabel('Suspensions')}
+        <div style="display:flex;align-items:center;gap:0">
+          ${!isNaN(susLastN) ? travelCard(susLast, 'Last Year', '#c0392b') + arrow() : ''}
+          ${travelCard(susThis, !isNaN(susLastN) ? 'This Year' : 'Suspensions', '#c0392b')}
+          ${deltaChip(susDiffStr ? susDiffStr + ' day' + (Math.abs(susDiff)!==1?'s':'') : null, susDiffCol)}
+        </div>
+      </div>
+
+      <!-- Behaviour & Internal Excl row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:var(--surface);border-radius:var(--radius);padding:10px 14px;text-align:center;border:1px solid var(--border)">
+          <div style="font-size:22px;font-weight:800;color:${bpColor};line-height:1.1">${bp}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Behaviour Pts</div>
+        </div>
+        <div style="background:var(--surface);border-radius:var(--radius);padding:10px 14px;text-align:center;border:1px solid var(--border)">
+          <div style="font-size:22px;font-weight:800;color:#e67e22;line-height:1.1">${intEx}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Internal Excl.</div>
+        </div>
+      </div>
+
+      <!-- Tags -->
       <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
         <span style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px"><strong>SEN:</strong> ${sen}</span>
         <span style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px"><strong>FSM:</strong> ${fsm}</span>
@@ -1418,7 +1457,7 @@ function selectStudent(arborId) {
     pp: s['PP'] || '',
     kssPkss: s['KSS/PKSS'] || '',
     behaviourPoints: bp !== '—' ? bp : '',
-    attendance: attDisplay !== '—' ? attDisplay : '',
+    attendance: attThisN !== null ? String(attThisN) : '',
     suspensions: susThis !== '—' ? susThis : '',
     internalExclusions: intEx !== '—' ? intEx : '',
     lead: s['Lead Responsible'] || '',
