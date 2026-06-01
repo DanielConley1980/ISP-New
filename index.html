@@ -1349,59 +1349,62 @@ function selectStudent(arborId) {
   const susDiffCol = susDiff !== null ? (susDiff > 0 ? '#c0392b' : '#27ae60') : '#888';
 
   function travelCard(val, label, accentColor) {
-    return `<div style="background:var(--surface);border-radius:var(--radius);padding:10px 14px;text-align:center;border:1px solid var(--border);flex:1;min-width:70px">
-      <div style="font-size:22px;font-weight:800;color:${accentColor};line-height:1.1">${val}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">${label}</div>
+    return `<div style="text-align:center;flex:1;min-width:60px;padding:6px 10px">
+      <div style="font-size:15px;font-weight:600;color:${accentColor};line-height:1.2">${val}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:0.03em">${label}</div>
     </div>`;
   }
   function deltaChip(str, col) {
     if (!str) return '';
-    return `<div style="display:flex;align-items:center;justify-content:center;padding:0 6px">
-      <span style="font-size:13px;font-weight:800;color:${col};background:${col}18;border:1.5px solid ${col}40;border-radius:20px;padding:4px 10px;white-space:nowrap">${str}</span>
+    return `<div style="display:flex;align-items:center;padding:0 8px 0 4px">
+      <span style="font-size:11px;font-weight:600;color:${col};background:${col}15;border:1px solid ${col}35;border-radius:20px;padding:3px 8px;white-space:nowrap">${str}</span>
     </div>`;
   }
   function arrow() {
-    return `<div style="display:flex;align-items:center;justify-content:center;color:#bbb;font-size:18px;padding:0 2px">→</div>`;
+    return `<div style="display:flex;align-items:center;color:#ccc;font-size:13px;padding:0 1px;padding-bottom:10px">→</div>`;
   }
   function misSectionLabel(txt) {
-    return `<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">${txt}</div>`;
+    return `<div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;padding-left:2px">${txt}</div>`;
   }
 
   const infoCard = document.getElementById('student-info-card');
   infoCard.style.display = 'block';
   infoCard.innerHTML = `
     <div style="padding:1rem 1.25rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px">Live data from MIS</div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Live data from MIS</div>
 
-      <!-- Attendance row -->
-      <div style="margin-bottom:14px">
-        ${misSectionLabel('Attendance')}
-        <div style="display:flex;align-items:center;gap:0">
-          ${attLastN !== null ? travelCard(fmtAtt(attLastN), 'Last Term', '#444') + arrow() : ''}
-          ${travelCard(fmtAtt(attThisN), attLastN !== null ? 'This Term' : 'Attendance', '#444')}
-          ${deltaChip(attDeltaStr, attDeltaCol)}
+      <!-- Attendance + Suspensions in one white card -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
+        <!-- Attendance row -->
+        <div style="margin-bottom:8px">
+          ${misSectionLabel('Attendance')}
+          <div style="display:flex;align-items:center">
+            ${attLastN !== null ? travelCard(fmtAtt(attLastN), 'Last Term', '#444') + arrow() : ''}
+            ${travelCard(fmtAtt(attThisN), attLastN !== null ? 'This Term' : 'Attendance', '#444')}
+            ${deltaChip(attDeltaStr, attDeltaCol)}
+          </div>
         </div>
-      </div>
-
-      <!-- Suspensions row -->
-      <div style="margin-bottom:14px">
-        ${misSectionLabel('Suspensions')}
-        <div style="display:flex;align-items:center;gap:0">
-          ${!isNaN(susLastN) ? travelCard(susLast, 'Last Year', '#c0392b') + arrow() : ''}
-          ${travelCard(susThis, !isNaN(susLastN) ? 'This Year' : 'Suspensions', '#c0392b')}
-          ${deltaChip(susDiffStr ? susDiffStr + ' day' + (Math.abs(susDiff)!==1?'s':'') : null, susDiffCol)}
+        <div style="border-top:1px solid var(--border);margin:0 -2px 8px"></div>
+        <!-- Suspensions row -->
+        <div>
+          ${misSectionLabel('Suspensions')}
+          <div style="display:flex;align-items:center">
+            ${!isNaN(susLastN) ? travelCard(susLast, 'Last Year', '#c0392b') + arrow() : ''}
+            ${travelCard(susThis, !isNaN(susLastN) ? 'This Year' : 'Suspensions', '#c0392b')}
+            ${deltaChip(susDiffStr ? susDiffStr + ' day' + (Math.abs(susDiff)!==1?'s':'') : null, susDiffCol)}
+          </div>
         </div>
       </div>
 
       <!-- Behaviour & Internal Excl row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-        <div style="background:var(--surface);border-radius:var(--radius);padding:10px 14px;text-align:center;border:1px solid var(--border)">
-          <div style="font-size:22px;font-weight:800;color:${bpColor};line-height:1.1">${bp}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Behaviour Pts</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--surface);border-radius:var(--radius);padding:8px 12px;text-align:center;border:1px solid var(--border)">
+          <div style="font-size:15px;font-weight:600;color:${bpColor};line-height:1.2">${bp}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Behaviour Pts</div>
         </div>
-        <div style="background:var(--surface);border-radius:var(--radius);padding:10px 14px;text-align:center;border:1px solid var(--border)">
-          <div style="font-size:22px;font-weight:800;color:#e67e22;line-height:1.1">${intEx}</div>
-          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em">Internal Excl.</div>
+        <div style="background:var(--surface);border-radius:var(--radius);padding:8px 12px;text-align:center;border:1px solid var(--border)">
+          <div style="font-size:15px;font-weight:600;color:#e67e22;line-height:1.2">${intEx}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Internal Excl.</div>
         </div>
       </div>
 
