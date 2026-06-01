@@ -1310,21 +1310,49 @@ function selectStudent(arborId) {
   banner.style.display = 'block';
   banner.innerHTML = `✓ Record found — <strong>${fullName}</strong> · UPN ${s['UPN'] || s['Arbor ID']}`;
 
-  // Info card
-  const pct = s['Present'] || '';
-  const bp = s['Behaviour Points'] !== undefined ? s['Behaviour Points'] : '—';
-  const sus = s['Suspensions this Year'] !== undefined ? s['Suspensions this Year'] : '—';
-  const intEx = s['Internal Exclusions this Year'] !== undefined ? s['Internal Exclusions this Year'] : '—';
-  const sen = s['SEN Status'] || '—';
-  const fsm = s['FSM'] || '—';
-  const pp = s['PP'] || '—';
-  const eal = s['EAL'] || '—';
-  const lead = s['Lead Responsible'] || '—';
+  // Info card — use sheetVal for resilient column matching
+  const pct      = sheetVal(s, 'Present', 'Attendance %', 'Attendance', 'Att %', 'Att%', 'attendance') || '';
+  const attLast  = sheetVal(s, 'Attendance Last Term', 'Att Last Term', 'Last Term Attendance', 'Previous Term Attendance') || '';
+  const attThis  = sheetVal(s, 'Attendance This Term', 'Att This Term', 'This Term Attendance', 'Current Term Attendance') || pct;
+  const bp       = sheetVal(s, 'Behaviour Points', 'Behaviour Pts', 'BehaviourPoints') || '—';
+  const susThis  = sheetVal(s, 'Suspensions this Year', 'Suspensions This Year', 'Suspensions', 'Sus This Year') || '—';
+  const susLast  = sheetVal(s, 'Suspensions Last Year', 'Sus Last Year', 'Previous Year Suspensions') || '—';
+  const intEx    = sheetVal(s, 'Internal Exclusions this Year', 'Internal Exclusions', 'Internal Excl', 'Int Excl') || '—';
+  const sen      = sheetVal(s, 'SEN Status', 'SEN') || '—';
+  const fsm      = sheetVal(s, 'FSM') || '—';
+  const pp       = sheetVal(s, 'PP') || '—';
+  const eal      = sheetVal(s, 'EAL') || '—';
+  const lead     = sheetVal(s, 'Lead Responsible', 'Lead') || '—';
 
-  const bpNum = parseFloat(bp);
-  const bpColor = isNaN(bpNum) ? 'var(--teal)' : bpNum < 0 ? '#c0392b' : bpNum > 200 ? '#e67e22' : 'var(--teal)';
-  const attNum = parseFloat(pct);
-  const attColor = isNaN(attNum) ? 'var(--teal)' : attNum < 85 ? '#c0392b' : attNum < 90 ? '#e67e22' : 'var(--teal)';
+  // Behaviour points: green if ≥ 0, red if negative
+  const bpNum  = parseFloat(bp);
+  const bpColor = isNaN(bpNum) ? '#555' : bpNum < 0 ? '#c0392b' : '#27ae60';
+
+  // Attendance % change between terms
+  const attLastNum = parseFloat(attLast);
+  const attThisNum = parseFloat(attThis);
+  const attDelta   = (!isNaN(attLastNum) && !isNaN(attThisNum)) ? (attThisNum - attLastNum).toFixed(1) : null;
+  const attDeltaStr = attDelta !== null ? (parseFloat(attDelta) >= 0 ? `+${attDelta}%` : `${attDelta}%`) : '';
+  const attDeltaCol = attDelta !== null ? (parseFloat(attDelta) >= 0 ? '#27ae60' : '#c0392b') : '#888';
+
+  // Suspensions difference (days)
+  const susThisNum = parseFloat(susThis);
+  const susLastNum = parseFloat(susLast);
+  const susDiff    = (!isNaN(susThisNum) && !isNaN(susLastNum)) ? (susThisNum - susLastNum) : null;
+  const susDiffStr = susDiff !== null ? (susDiff >= 0 ? `+${susDiff}d` : `${susDiff}d`) : '';
+  const susDiffCol = susDiff !== null ? (susDiff > 0 ? '#c0392b' : '#27ae60') : '#888';
+
+  function misCard(mainVal, label, color, sub1='', sub2='', sub2col='#888') {
+    return `<div style="background:var(--surface);border-radius:var(--radius);padding:8px 10px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:18px;font-weight:800;color:${color}">${mainVal}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${label}</div>
+      ${sub1 ? `<div style="font-size:9px;color:#888;margin-top:3px;line-height:1.3">${sub1}</div>` : ''}
+      ${sub2 ? `<div style="font-size:9px;font-weight:700;color:${sub2col};margin-top:1px">${sub2}</div>` : ''}
+    </div>`;
+  }
+
+  const attDisplay = attThis || pct || '—';
+  const attSub1 = attLast ? `Last: ${attLast}% → Now: ${attThis}%` : '';
 
   const infoCard = document.getElementById('student-info-card');
   infoCard.style.display = 'block';
@@ -1332,16 +1360,12 @@ function selectStudent(arborId) {
     <div style="padding:1rem 1.25rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Live data from MIS</div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-        ${[
-          ['Attendance', pct, attColor],
-          ['Behaviour Pts', bp, bpColor],
-          ['Suspensions', sus, parseInt(sus)>0?'#c0392b':'var(--teal)'],
-          ['Internal Excl.', intEx, parseInt(intEx)>2?'#e67e22':'var(--teal)'],
-        ].map(([label,val,col])=>`
-          <div style="background:var(--surface);border-radius:var(--radius);padding:8px 10px;text-align:center;border:1px solid var(--border)">
-            <div style="font-size:18px;font-weight:800;color:${col}">${val}</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">${label}</div>
-          </div>`).join('')}
+        ${misCard(attDisplay ? attDisplay+'%' : '—', 'Attendance', '#444', attSub1, attDeltaStr, attDeltaCol)}
+        ${misCard(bp, 'Behaviour Pts', bpColor)}
+        ${misCard(susThis, 'Suspensions', '#c0392b',
+            susLast !== '—' ? `Last yr: ${susLast} · This yr: ${susThis}` : '',
+            susDiffStr, susDiffCol)}
+        ${misCard(intEx, 'Internal Excl.', '#e67e22')}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
         <span style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px"><strong>SEN:</strong> ${sen}</span>
@@ -1393,10 +1417,10 @@ function selectStudent(arborId) {
     fsm: s['FSM'] || '',
     pp: s['PP'] || '',
     kssPkss: s['KSS/PKSS'] || '',
-    behaviourPoints: s['Behaviour Points'] !== undefined ? String(s['Behaviour Points']) : '',
-    attendance: pct,
-    suspensions: String(s['Suspensions this Year'] || ''),
-    internalExclusions: String(s['Internal Exclusions this Year'] || ''),
+    behaviourPoints: bp !== '—' ? bp : '',
+    attendance: attDisplay !== '—' ? attDisplay : '',
+    suspensions: susThis !== '—' ? susThis : '',
+    internalExclusions: intEx !== '—' ? intEx : '',
     lead: s['Lead Responsible'] || '',
     pupilPassportLink: s['Pupil Passport Link'] || '',
   };
