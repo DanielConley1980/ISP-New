@@ -2889,6 +2889,7 @@ function renderViewScreen(isp, idx) {
     <div id="view-sec-overview"></div>
     <div id="view-sec-health"></div>
     <div id="view-sec-strengths"></div>
+    <div id="view-sec-strategies"></div>
     <div id="view-sec-targets"></div>
     <div id="view-sec-voices"></div>
     <div id="view-sec-apdr"></div>`;
@@ -2896,6 +2897,7 @@ function renderViewScreen(isp, idx) {
   vsOverview(isp, idx);
   vsHealth(isp, idx);
   vsStrengths(isp, idx);
+  vsStrategies(isp, idx);
   vsTargets(isp, idx);
   vsVoices(isp, idx);
   vsAPDR(isp, idx);
@@ -3008,9 +3010,11 @@ function vsHealth(isp, idx) {
           ${h.links?`<p style="font-size:13px;line-height:1.6;margin:0 0 8px">${h.links}</p>`:''}
           <div id="health-docs-${idx}" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${docsHTML}</div>
           <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--muted)">
-            📎 Attach PDF / document
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            Attach PDF / document
             <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" style="display:none" onchange="attachHealthDoc(${idx},this)">
           </label>
+          <style>.health-attach-btn svg{vertical-align:middle}</style>
         </div>
       </div>
     </div>`;
@@ -3067,6 +3071,48 @@ function vsStrengths(isp, idx) {
           ${closedRows}
         </tbody>
       </table>
+    </div>`;
+}
+
+function vsStrategies(isp, idx) {
+  const el = document.getElementById('view-sec-strategies');
+  if (!el) return;
+  const hasSeating   = (isp.areas||[]).some(k => isp.seating&&isp.seating[k]);
+  const hasStrategies = (isp.areas||[]).some(k => isp.strategies&&isp.strategies[k]);
+  if (!hasSeating && !hasStrategies) { el.innerHTML = ''; return; }
+
+  const seatingLines = (isp.areas||[]).map(k => {
+    const seat = (isp.seating&&isp.seating[k]) || '';
+    if (!seat) return '';
+    return `<div style="font-size:13px;margin-bottom:3px"><span style="font-weight:700;color:${AREA_COLOR[k]}">${AREA_ICON[k]} ${AREA_LABELS[k]}:</span> ${seat}</div>`;
+  }).filter(Boolean);
+
+  const strategiesHTML = (isp.areas||[]).map(k => {
+    const strat = (isp.strategies&&isp.strategies[k]) || '';
+    if (!strat) return '';
+    const color = AREA_COLOR[k];
+    return `<div style="margin-bottom:8px;padding:10px 14px;border-radius:var(--radius);border-left:3px solid ${color};background:${color}08">
+      <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px">${AREA_ICON[k]} ${AREA_LABELS[k]}</div>
+      <div style="font-size:13px;line-height:1.6">${strat}</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  el.innerHTML = `
+    <div class="table-card" style="margin-bottom:1.5rem">
+      <div class="table-card-header">
+        <h2>Strategies &amp; seating</h2>
+        <button class="btn-secondary" style="font-size:12px;padding:5px 12px" onclick="editViewSection('strengths',${idx})">✏ Edit</button>
+      </div>
+      <div style="padding:1rem 1.25rem">
+        ${seatingLines.length ? `
+          <div style="background:#f4f4f4;border:1.5px solid #c0c0c0;border-radius:var(--radius);padding:10px 14px;margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:#444;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">🪑 Seating plan advice</div>
+            ${seatingLines.join('')}
+          </div>` : ''}
+        ${strategiesHTML ? `
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Key support strategies for all staff</div>
+          ${strategiesHTML}` : ''}
+      </div>
     </div>`;
 }
 
@@ -3298,6 +3344,7 @@ function confirmAreaRemoval(key, idx) {
 
   editViewAreas(idx);
   vsStrengths(isp, idx);
+  vsStrategies(isp, idx);
   vsAPDR(isp, idx);
 }
 
@@ -3402,7 +3449,7 @@ function editViewSection(section, idx) {
               </div>
             </div>`).join('')}
           <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn-secondary" style="font-size:13px" onclick="vsStrengths(state.isps[${idx}],${idx})">Cancel</button>
+            <button class="btn-secondary" style="font-size:13px" onclick="vsStrengths(state.isps[${idx}],${idx});vsStrategies(state.isps[${idx}],${idx})">Cancel</button>
             <button class="btn-primary" style="font-size:13px" onclick="saveViewSection('strengths',${idx})">Save changes</button>
           </div>
         </div>
@@ -3990,8 +4037,8 @@ function buildISPPDF(src) {
           </td>
         </tr>
       </table>
-      <div style="background:#EAF6F0;border:1px solid #8DCFB0;border-radius:4px;padding:8px 12px;margin-bottom:12px">
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#0F6E56;margin-bottom:5px">🪑 Seating plan advice</div>
+      <div style="background:#ffffff;border:1px solid #ccc;border-radius:4px;padding:8px 12px;margin-bottom:12px">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#444;margin-bottom:5px">🪑 Seating plan advice</div>
         ${seatingHtml}
       </div>
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#666;margin-bottom:6px">Key support strategies for all staff</div>
