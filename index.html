@@ -1593,7 +1593,7 @@ function fmtLastEdited(iso) {
 }
 
 function senCode(isp) {
-  const d = ((isp.overview && isp.overview.diagnoses) || isp.level || '').trim();
+  const d = ((isp.overview && isp.overview.diagnoses) || '').trim();
   if (/^ehcp/i.test(d) || /\behcp\b/i.test(d)) return 'E';
   if (/K\+/i.test(d)) return 'K+';
   if (/^K\b/i.test(d) || /\bK\b/.test(d)) return 'K';
@@ -2083,13 +2083,6 @@ function renderStep0(el) {
       </div>
     </div>
     <div class="row-2">
-      <div class="field"><label>Level of plan</label>
-        <select id="s0-level">
-          <option ${(o.level||'Targeted')==='Targeted'?'selected':''}>Targeted</option>
-          <option ${o.level==='Targeted Plus'?'selected':''}>Targeted Plus</option>
-        </select>
-        <div class="hint">Targeted Plus = access to Inclusion Base or alternative provision</div>
-      </div>
       <div class="field">
         <label>Current attendance (%)</label>
         <input type="number" id="s0-attendance" min="0" max="100" value="${attendVal}" placeholder="e.g. 94" ${attendVal&&!o.attendance?'style="background:var(--teal-light);border-color:var(--teal)"':''} />
@@ -2562,7 +2555,6 @@ function renderStep6(el) {
 
     <div class="summary-panel">
       <h3>Plan overview</h3>
-      <div class="summary-row"><span class="summary-key">Level of plan</span><span class="summary-val"><strong>${o.level||'Targeted'}</strong></span></div>
       <div class="summary-row"><span class="summary-key">Created</span><span class="summary-val">${o.created||'—'}</span></div>
       <div class="summary-row"><span class="summary-key">Last reviewed</span><span class="summary-val">${o.reviewed||'—'}</span></div>
       <div class="summary-row"><span class="summary-key">Diagnoses</span><span class="summary-val">${o.diagnoses||'—'}</span></div>
@@ -2728,7 +2720,7 @@ function buildFallbackHTML(isp) {
       <tr><td style="padding:6px;border:1px solid #ccc"><strong>Date of birth</strong></td><td style="padding:6px;border:1px solid #ccc">${src.dob||'—'}</td><td style="padding:6px;border:1px solid #ccc"><strong>Year / form</strong></td><td style="padding:6px;border:1px solid #ccc">${src.year||'—'} ${src.form||''}</td></tr>
       <tr><td style="padding:6px;border:1px solid #ccc"><strong>School</strong></td><td style="padding:6px;border:1px solid #ccc">${src.school||'—'}</td><td style="padding:6px;border:1px solid #ccc"><strong>Gender</strong></td><td style="padding:6px;border:1px solid #ccc">${src.gender||'—'}</td></tr>
       <tr><td style="padding:6px;border:1px solid #ccc"><strong>Diagnoses</strong></td><td style="padding:6px;border:1px solid #ccc" colspan="3">${o.diagnoses||'—'}</td></tr>
-      <tr><td style="padding:6px;border:1px solid #ccc"><strong>Level of plan</strong></td><td style="padding:6px;border:1px solid #ccc"><strong>${src.level||o.level||'Targeted'}</strong></td><td style="padding:6px;border:1px solid #ccc"><strong>Attendance</strong></td><td style="padding:6px;border:1px solid #ccc">${o.attendance||'—'}%</td></tr>
+      <tr><td style="padding:6px;border:1px solid #ccc"><strong>Attendance</strong></td><td style="padding:6px;border:1px solid #ccc" colspan="3">${o.attendance||'—'}%</td></tr>
       <tr><td style="padding:6px;border:1px solid #ccc"><strong>Responsible staff</strong></td><td style="padding:6px;border:1px solid #ccc">${o.staff||'—'}</td><td style="padding:6px;border:1px solid #ccc"><strong>EHCP</strong></td><td style="padding:6px;border:1px solid #ccc">${h.ehcp||'—'}</td></tr>
       <tr><td style="padding:6px;border:1px solid #ccc"><strong>External agencies</strong></td><td style="padding:6px;border:1px solid #ccc" colspan="3">${o.agencies||'—'}</td></tr>
       <tr><td style="padding:6px;border:1px solid #ccc"><strong>Date created</strong></td><td style="padding:6px;border:1px solid #ccc">${o.created||'—'}</td><td style="padding:6px;border:1px solid #ccc"><strong>Last reviewed</strong></td><td style="padding:6px;border:1px solid #ccc">${o.reviewed||'—'}</td></tr>
@@ -2862,7 +2854,6 @@ function vsOverview(isp, idx) {
           <div style="font-size:13px;color:var(--muted)">UPN <strong>${isp.arborId}</strong> &nbsp;·&nbsp; ${isp.year} ${isp.form} &nbsp;·&nbsp; DOB: ${isp.dob||'—'} &nbsp;·&nbsp; ${isp.gender||'—'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <span class="badge ${isp.level==='Targeted Plus'?'badge-amber':'badge-teal'}" style="font-size:13px;padding:5px 14px">${isp.level}</span>
           <span style="font-size:12px;color:var(--muted)">Staff: ${o.staff||'—'}</span>
           <span style="font-size:12px;color:var(--muted)">Attendance: ${o.attendance?o.attendance+'%':'—'}</span>
           <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-top:4px" onclick="editViewSection('overview',${idx})">✏ Edit</button>
@@ -3615,7 +3606,6 @@ function renderISPPreview(idx) {
           <div style="font-size:13px;color:var(--muted)">UPN <strong>${isp.arborId}</strong> · ${isp.year} ${isp.form} · DOB: ${isp.dob||'—'} · ${isp.gender||'—'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <span style="font-size:13px;font-weight:700;padding:5px 14px;border-radius:20px;${isp.level==='Targeted Plus'?'background:#FAEEDA;color:#854F0B':'background:var(--teal-light);color:var(--teal-dark)'}">${isp.level}</span>
           <span style="font-size:12px;color:var(--muted)">Staff: ${o.staff||'—'}</span>
           <span style="font-size:12px;color:var(--muted)">Attendance: ${o.attendance||'—'}%</span>
         </div>
@@ -3664,7 +3654,6 @@ function renderISPPreview(idx) {
         <div style="font-size:24px;font-weight:700;margin-bottom:4px">${isp.name}</div>
         <div style="font-size:14px;color:var(--muted)">UPN: <strong>${isp.arborId}</strong> &nbsp;·&nbsp; ${isp.year} ${isp.form} &nbsp;·&nbsp; DOB: ${isp.dob||'—'} &nbsp;·&nbsp; Gender: ${isp.gender||'—'}</div>
       </div>
-      <span style="display:inline-block;font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px;${isp.level==='Targeted Plus'?'background:#FAEEDA;color:#854F0B':'background:var(--teal-light);color:var(--teal-dark)'}">${isp.level}</span>
     </div>
 
     <!-- Two-column meta -->
@@ -3861,7 +3850,6 @@ function buildISPPDF(src) {
             <div style="font-size:11px;opacity:0.85">Arbor ${src.arborId} &nbsp;·&nbsp; ${src.year} ${src.form} &nbsp;·&nbsp; DOB: ${src.dob||'—'} &nbsp;·&nbsp; ${src.gender||'—'}</div>
           </td>
           <td style="padding:12px 16px;color:white;text-align:right;vertical-align:top;white-space:nowrap">
-            <div style="display:inline-block;padding:4px 12px;border-radius:20px;${src.level==='Targeted Plus'?'background:#FAEEDA;color:#854F0B':'background:white;color:#0F6E56'};font-size:11px;font-weight:700;margin-bottom:6px">${src.level}</div>
             <div style="font-size:11px">Staff: ${o.staff||'—'}</div>
             <div style="font-size:11px">Attendance: ${o.attendance||'—'}%</div>
           </td>
@@ -3903,9 +3891,8 @@ function buildISPPDF(src) {
         <tr>${td('<strong>Date of birth</strong>')}${td(src.dob||'—')}${td('<strong>Year / form</strong>')}${td((src.year||'—')+' '+(src.form||''))}</tr>
         <tr>${td('<strong>School</strong>')}${td(src.school||'—')}${td('<strong>Gender</strong>')}${td(src.gender||'—')}</tr>
         <tr>${td('<strong>Diagnoses</strong>')}<td colspan="3" style="padding:5px 8px;border:1px solid #ccc;font-size:11px">${o.diagnoses||'—'}</td></tr>
-        <tr>${td('<strong>Level of plan</strong>')}${td('<strong>'+(src.level||'Targeted')+'</strong>')}${td('<strong>Attendance</strong>')}${td((o.attendance||'—')+'%')}</tr>
-        <tr>${td('<strong>Responsible staff</strong>')}${td(o.staff||'—')}${td('<strong>EHCP</strong>')}${td(h.ehcp||'—')}</tr>
-        <tr>${td('<strong>Agencies</strong>')}<td colspan="3" style="padding:5px 8px;border:1px solid #ccc;font-size:11px">${o.agencies||'—'}</td></tr>
+        <tr>${td('<strong>Attendance</strong>')}${td((o.attendance||'—')+'%')}${td('<strong>EHCP</strong>')}${td(h.ehcp||'—')}</tr>
+        <tr>${td('<strong>Responsible staff</strong>')}${td(o.staff||'—')}${td('<strong>Agencies</strong>')}${td(o.agencies||'—')}</tr>
         <tr>${td('<strong>Created</strong>')}${td(o.created||'—')}${td('<strong>Last reviewed</strong>')}${td(o.reviewed||'—')}</tr>
       </table>
     </div>
