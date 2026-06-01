@@ -2943,6 +2943,7 @@ function vsOverview(isp, idx) {
           <div style="font-size:13px;color:var(--muted)">UPN <strong>${isp.arborId}</strong> &nbsp;·&nbsp; ${isp.year} ${isp.form} &nbsp;·&nbsp; DOB: ${isp.dob||'—'} &nbsp;·&nbsp; ${isp.gender||'—'}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          ${(() => { const c = senCode(isp); const col = c==='E'?'#b71c1c':c==='K+'?'#c07000':c==='K'?'#b8860b':c==='M'?'#2e7d32':'#555'; return c ? `<span style="font-size:13px;font-weight:800;padding:5px 14px;border-radius:20px;background:${col}15;border:1.5px solid ${col}50;color:${col};letter-spacing:0.04em">${c}</span>` : ''; })()}
           <span style="font-size:12px;color:var(--muted)">Staff: ${o.staff||'—'}</span>
           <span style="font-size:12px;color:var(--muted)">Attendance: ${o.attendance?o.attendance+'%':'—'}</span>
           <button class="btn-secondary" style="font-size:12px;padding:4px 10px;margin-top:4px" onclick="editViewSection('overview',${idx})">✏ Edit</button>
@@ -2969,7 +2970,7 @@ function vsOverview(isp, idx) {
       </div>
 
       <div style="padding:1rem 1.5rem;display:flex;flex-wrap:wrap;gap:1.5rem">
-        ${[['Created',o.created||'—'],['Last reviewed',o.reviewed||'—'],['EHCP',h.ehcp||'—'],['Diagnoses',o.diagnoses||'—'],['Agencies',o.agencies||'—']].map(([k,v])=>`
+        ${[['Created',o.created||'—'],['Last reviewed',o.reviewed||'—'],['Diagnoses',(o.diagnoses||'—').replace(/^(ehcp|k\+|k|m)\s*[—\-–]\s*/i,'')],['Agencies',o.agencies||'—']].map(([k,v])=>`
           <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${k}</div><div style="font-size:13px;font-weight:600">${v}</div></div>`).join('')}
       </div>
     </div>`;
@@ -2979,6 +2980,14 @@ function vsHealth(isp, idx) {
   const el = document.getElementById('view-sec-health');
   if (!el) return;
   const h = isp.health || {};
+  const docs = h.docs || [];
+  const docsHTML = docs.length ? docs.map((d,di) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px">
+      <span style="font-size:15px">📄</span>
+      <a href="${d.url}" target="_blank" style="color:var(--teal);text-decoration:none;font-weight:600;flex:1">${d.name}</a>
+      <button onclick="removeHealthDoc(${idx},${di})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px" title="Remove">×</button>
+    </div>`).join('') : '';
+
   el.innerHTML = `
     <div class="table-card" style="margin-bottom:1.5rem">
       <div class="table-card-header">
@@ -2994,9 +3003,34 @@ function vsHealth(isp, idx) {
           <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px">Social care / community services</div>
           <p style="font-size:13px;line-height:1.6">${h.social||'<em style="color:var(--subtle)">Not recorded.</em>'}</p>
         </div>
-        ${h.links?`<div style="grid-column:span 2"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px">Relevant document links</div><p style="font-size:13px;line-height:1.6">${h.links}</p></div>`:''}
+        <div style="grid-column:span 2">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Documents &amp; links</div>
+          ${h.links?`<p style="font-size:13px;line-height:1.6;margin:0 0 8px">${h.links}</p>`:''}
+          <div id="health-docs-${idx}" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${docsHTML}</div>
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--muted)">
+            📎 Attach PDF / document
+            <input type="file" accept=".pdf,.doc,.docx,.png,.jpg" style="display:none" onchange="attachHealthDoc(${idx},this)">
+          </label>
+        </div>
       </div>
     </div>`;
+}
+
+function attachHealthDoc(idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const isp = state.isps[idx];
+  if (!isp.health) isp.health = {};
+  if (!isp.health.docs) isp.health.docs = [];
+  isp.health.docs.push({ name: file.name, url });
+  saveISPs();
+  vsHealth(isp, idx);
+}
+
+function removeHealthDoc(idx, di) {
+  const isp = state.isps[idx];
+  if (isp.health?.docs) { isp.health.docs.splice(di, 1); saveISPs(); vsHealth(isp, idx); }
 }
 
 function vsStrengths(isp, idx) {
