@@ -537,11 +537,12 @@
         <table id="isp-table">
           <thead>
             <tr id="dash-thead">
-              <th data-col="name"    class="sortable">Student <span class="sort-icon">↕</span></th>
-              <th data-col="year"    class="sortable">Year <span class="sort-icon">↕</span></th>
-              <th data-col="school"  class="sortable">School <span class="sort-icon">↕</span></th>
-              <th data-col="sen"     class="sortable">SEN <span class="sort-icon">↕</span></th>
-              <th data-col="staff"   class="sortable">Staff <span class="sort-icon">↕</span></th>
+              <th data-col="name"      class="sortable">Student <span class="sort-icon">↕</span></th>
+              <th data-col="year"      class="sortable">Year <span class="sort-icon">↕</span></th>
+              <th data-col="school"    class="sortable">School <span class="sort-icon">↕</span></th>
+              <th data-col="sen"       class="sortable">SEN <span class="sort-icon">↕</span></th>
+              <th data-col="staff"     class="sortable">Staff <span class="sort-icon">↕</span></th>
+              <th data-col="apdrCount" class="sortable" style="text-align:center">APDRs <span class="sort-icon">↕</span></th>
               <th data-col="lastEdited" class="sortable">Last edited <span class="sort-icon">↕</span></th>
               <th></th>
             </tr>
@@ -549,8 +550,9 @@
               <th></th>
               <th><select data-col="year" onchange="applyFilters()" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface)"><option value="">All</option><option>Year 7</option><option>Year 8</option><option>Year 9</option><option>Year 10</option><option>Year 11</option></select></th>
               <th><input type="text" placeholder="Filter…" data-col="school"  oninput="applyFilters()" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface)" /></th>
-              <th><select data-col="sen" onchange="applyFilters()" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface)"><option value="">All</option><option value="M">M</option><option value="K">K</option><option value="E">E</option></select></th>
+              <th><select data-col="sen" onchange="applyFilters()" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface)"><option value="">All</option><option value="K">K</option><option value="K+">K+</option><option value="E">E</option></select></th>
               <th><input type="text" placeholder="Filter…" data-col="staff"   oninput="applyFilters()" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--surface)" /></th>
+              <th></th>
               <th></th>
               <th></th>
             </tr>
@@ -745,7 +747,7 @@ const DEMO_ISPS = [
     year:'Year 7', form:'7A', school:'Demo School', gender:'Male', dob:'2012-09-14',
     level:'Targeted Plus', staff:'Miss A Jones', updated:'28 Apr 2026',
     lastEdited: '2026-04-28T09:14:00.000Z',
-    overview:{ created:'2026-01-10', reviewed:'2026-04-28', level:'Targeted Plus', attendance:'88', diagnoses:'Autism spectrum condition, anxiety', staff:'Miss A Jones', agencies:'CAMHS, Autism Outreach Team, Educational Psychology' },
+    overview:{ created:'2026-01-10', reviewed:'2026-04-28', level:'Targeted Plus', attendance:'88', diagnoses:'K+ — Autism spectrum condition, anxiety', staff:'Miss A Jones', agencies:'CAMHS, Autism Outreach Team, Educational Psychology' },
     summary:'Aarav is a curious, creative and determined student with a deep interest in technology, Minecraft and science. His autism and anxiety present barriers particularly in unstructured social time, transitions between lessons and situations involving unexpected change. Aarav works best with predictable routines, advance notice of changes and clear, consistent adult support.',
     areas:['social','sensory','executive'],
     strengths:{ social:'Builds strong relationships with trusted adults. Polite and respectful with peers he knows well.', sensory:'Able to identify his own sensory triggers and uses ear defenders independently.', executive:'Strong long-term memory. Excellent recall of factual information.' },
@@ -776,7 +778,7 @@ const DEMO_ISPS = [
     year:'Year 7', form:'7B', school:'Demo School', gender:'Female', dob:'2012-11-03',
     level:'Targeted', staff:'Miss A Jones', updated:'15 Jan 2026',
     lastEdited: '2026-01-15T10:22:00.000Z',
-    overview:{ created:'2026-02-02', reviewed:'2026-01-15', level:'Targeted', attendance:'91', diagnoses:'Monitoring — SEMH, emotional dysregulation', staff:'Miss A Jones', agencies:'School counsellor' },
+    overview:{ created:'2026-02-02', reviewed:'2026-01-15', level:'Targeted', attendance:'91', diagnoses:'K+ — SEMH, emotional dysregulation', staff:'Miss A Jones', agencies:'School counsellor' },
     summary:'Amira is a warm, articulate and creative student who excels in English and drama. She struggles with managing strong emotions, particularly in response to perceived criticism or conflict with peers. Amira benefits from a trusted adult relationship and structured opportunities to reflect on her feelings.',
     areas:['social','executive'],
     strengths:{ social:'Strong empathy and emotional intelligence. Popular with peers when regulated.', executive:'Good verbal communication. Responds well to structured reflection prompts.' },
@@ -836,7 +838,7 @@ const DEMO_ISPS = [
     year:'Year 8', form:'8A', school:'Demo School', gender:'Female', dob:'2011-07-22',
     level:'Targeted', staff:'Miss A Jones', updated:'22 Jan 2026',
     lastEdited: '2026-01-22T11:30:00.000Z',
-    overview:{ created:'2026-02-10', reviewed:'2026-01-22', level:'Targeted', attendance:'94', diagnoses:'Monitoring — reading difficulties, possible dyslexia', staff:'Miss A Jones', agencies:'Specialist teacher assessment pending' },
+    overview:{ created:'2026-02-10', reviewed:'2026-01-22', level:'Targeted', attendance:'94', diagnoses:'K+ — reading difficulties, possible dyslexia', staff:'Miss A Jones', agencies:'Specialist teacher assessment pending' },
     summary:'Imani is a confident, sociable and enthusiastic student who enjoys PE, music and socialising with friends. She finds reading and extended writing very challenging, and her self-esteem around literacy is low. Imani benefits from multisensory approaches to learning and regular encouragement around her progress.',
     areas:['slc','executive'],
     strengths:{ slc:'Good verbal communication and comprehension. Excellent at explaining her ideas when given the chance to speak.', executive:'Strong working memory for verbal information. Good at remembering things she has heard.' },
@@ -896,7 +898,7 @@ const DEMO_ISPS = [
     year:'Year 9', form:'9B', school:'Demo School', gender:'Female', dob:'2010-06-30',
     level:'Targeted', staff:'Miss A Jones', updated:'18 Apr 2026',
     lastEdited: '2026-04-18T09:50:00.000Z',
-    overview:{ created:'2026-01-20', reviewed:'2026-04-18', level:'Targeted', attendance:'96', diagnoses:'Monitoring — SEMH, social anxiety', staff:'Miss A Jones', agencies:'School counsellor, CAMHS (waiting list)' },
+    overview:{ created:'2026-01-20', reviewed:'2026-04-18', level:'Targeted', attendance:'96', diagnoses:'K+ — SEMH, social anxiety', staff:'Miss A Jones', agencies:'School counsellor, CAMHS (waiting list)' },
     summary:'Sofia is a thoughtful, diligent and academically strong student who achieves well across most subjects. She experiences significant social anxiety which makes group work, presentations and social situations very difficult. Sofia has strong insight into her own needs and is very motivated to find strategies that help her.',
     areas:['social','sensory'],
     strengths:{ social:'Strong 1:1 relationships. Excellent written communication.', sensory:'Good self-awareness of anxiety triggers.' },
@@ -925,7 +927,7 @@ const DEMO_ISPS = [
     year:'Year 10', form:'10A', school:'Demo School', gender:'Male', dob:'2009-08-12',
     level:'Targeted', staff:'Miss A Jones', updated:'02 May 2026',
     lastEdited: '2026-05-02T08:30:00.000Z',
-    overview:{ created:'2026-03-01', reviewed:'2026-05-02', level:'Targeted', attendance:'93', diagnoses:'Monitoring — EBSA risk, school refusal history', staff:'Miss A Jones', agencies:'CAMHS, Early Help' },
+    overview:{ created:'2026-03-01', reviewed:'2026-05-02', level:'Targeted', attendance:'93', diagnoses:'K+ — EBSA risk, school refusal history', staff:'Miss A Jones', agencies:'CAMHS, Early Help' },
     summary:'Noah is an articulate, witty and perceptive student with real ability in maths and computing. He has a significant history of school refusal linked to anxiety and EBSA (Emotionally Based School Avoidance). Noah is now attending consistently following a managed reintegration but remains at risk and needs careful monitoring and a flexible, relationship-first approach.',
     areas:['social','executive'],
     strengths:{ social:'Strong insight into his own difficulties. Very good relationship with key adult.', executive:'High academic ability when engaged. Good problem-solving skills.' },
@@ -954,7 +956,7 @@ const DEMO_ISPS = [
     year:'Year 10', form:'10B', school:'Demo School', gender:'Female', dob:'2009-03-28',
     level:'Targeted Plus', staff:'Miss A Jones', updated:'30 Apr 2026',
     lastEdited: '2026-04-30T13:20:00.000Z',
-    overview:{ created:'2025-09-05', reviewed:'2026-04-30', level:'Targeted Plus', attendance:'82', diagnoses:'Monitoring — SEMH, bereavement, self-harm history', staff:'Miss A Jones', agencies:'CAMHS (open), school counsellor, safeguarding lead' },
+    overview:{ created:'2025-09-05', reviewed:'2026-04-30', level:'Targeted Plus', attendance:'82', diagnoses:'K+ — SEMH, bereavement, self-harm history', staff:'Miss A Jones', agencies:'CAMHS (open), school counsellor, safeguarding lead' },
     summary:'Olivia is a sensitive, empathetic and creative student who has experienced significant bereavement and has a history of self-harm, now resolved. She is currently open to CAMHS and accessing school counselling. Olivia is engaging positively with support and her wellbeing is improving, but she remains vulnerable and needs a consistent, trauma-informed approach from all staff.',
     areas:['social','executive'],
     strengths:{ social:'Strong empathy. Positive relationship with key adults and small group of trusted peers.', executive:'Good academic ability when emotionally regulated. Creative and expressive in art and English.' },
@@ -1014,7 +1016,7 @@ const DEMO_ISPS = [
     year:'Year 11', form:'11B', school:'Demo School', gender:'Female', dob:'2008-10-17',
     level:'Targeted', staff:'Miss A Jones', updated:'01 May 2026',
     lastEdited: '2026-05-01T16:10:00.000Z',
-    overview:{ created:'2026-02-15', reviewed:'2026-05-01', level:'Targeted', attendance:'95', diagnoses:'Monitoring — SEMH, exam anxiety, perfectionism', staff:'Miss A Jones', agencies:'School counsellor' },
+    overview:{ created:'2026-02-15', reviewed:'2026-05-01', level:'Targeted', attendance:'95', diagnoses:'K+ — SEMH, exam anxiety, perfectionism', staff:'Miss A Jones', agencies:'School counsellor' },
     summary:'Mia is a diligent, ambitious and highly motivated student who achieves very well academically. She experiences significant exam anxiety and perfectionism which causes her considerable distress, particularly in Year 11. Mia is at risk of burnout and benefits from strategies that reduce perfectionist thinking and build self-compassion alongside her natural academic drive.',
     areas:['social','executive'],
     strengths:{ social:'Excellent relationship with teachers. Very self-aware and reflective.', executive:'Exceptional organisation and academic output. Strong study skills.' },
@@ -1541,22 +1543,36 @@ function updateUserUI() {
 }
 
 /* ── Dashboard sort/filter state ── */
-const dashSort = { col: 'lastEdited', dir: 'desc' };
+const dashSort = { col: 'apdrCount', dir: 'desc' };
 let dashStatFilter = 'all'; // 'all' | 'plus' | 'review' | 'term'
 
+function hasAPDR(isp) {
+  return Array.isArray(isp.apdr) && isp.apdr.length > 0;
+}
+
+function currentTermBounds() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1; // 1-based
+  if (m >= 9)  return { start: new Date(y, 8, 1),  end: new Date(y, 11, 31) };   // Sep–Dec
+  if (m <= 3)  return { start: new Date(y, 0, 1),  end: new Date(y, 2, 31) };    // Jan–Mar
+  return           { start: new Date(y, 3, 1),  end: new Date(y, 6, 31) };       // Apr–Jul
+}
+
 function isDueForReview(isp) {
-  // Due if: no review date, OR last reviewed more than 12 weeks ago
+  if (!hasAPDR(isp)) return false;
   if (!isp.overview?.reviewed) return true;
   const reviewed = new Date(isp.overview.reviewed);
-  const twelveWeeksAgo = new Date();
-  twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 84);
-  return reviewed < twelveWeeksAgo;
+  const { start, end } = currentTermBounds();
+  // Due if no review falls within the current term window
+  return !(reviewed >= start && reviewed <= end);
 }
 
 function isCreatedThisTerm(isp) {
-  // Spring term 2026: Jan–Apr; Summer term 2026: Apr–Jul
-  const created = isp.overview?.created || '';
-  return created.includes('2026');
+  if (!isp.overview?.created) return false;
+  const created = new Date(isp.overview.created);
+  const { start, end } = currentTermBounds();
+  return created >= start && created <= end;
 }
 
 function toggleStatFilter(key) {
@@ -1584,6 +1600,7 @@ function fmtLastEdited(iso) {
 function senCode(isp) {
   const d = ((isp.overview && isp.overview.diagnoses) || isp.level || '').trim();
   if (/^ehcp/i.test(d) || /\behcp\b/i.test(d)) return 'E';
+  if (/K\+/i.test(d)) return 'K+';
   if (/^K\b/i.test(d) || /\bK\b/.test(d)) return 'K';
   if (/^monitoring/i.test(d) || /\bmonitoring\b/i.test(d)) return 'M';
   return '';
@@ -1593,11 +1610,10 @@ function sortISPs(isps) {
   const { col, dir } = dashSort;
   return [...isps].sort((a, b) => {
     let av, bv;
-    if (col === 'sen')    { av = senCode(a); bv = senCode(b); }
+    if (col === 'sen')       { av = senCode(a); bv = senCode(b); }
+    else if (col === 'apdrCount') { av = (a.apdr||[]).length; bv = (b.apdr||[]).length; }
     else { av = a[col] || ''; bv = b[col] || ''; }
-    // Year sort numerically
-    if (col === 'year') { av = parseInt(av.replace('Year ',''))||0; bv = parseInt(bv.replace('Year ',''))||0; }
-    // ISO date sort
+    if (col === 'year')       { av = parseInt(String(av).replace('Year ',''))||0; bv = parseInt(String(bv).replace('Year ',''))||0; }
     if (col === 'lastEdited') { av = av ? new Date(av).getTime() : 0; bv = bv ? new Date(bv).getTime() : 0; }
     if (av < bv) return dir === 'asc' ? -1 : 1;
     if (av > bv) return dir === 'asc' ? 1 : -1;
@@ -1617,13 +1633,15 @@ function getFilterValues() {
 function filterISPs(isps) {
   const { filters, search } = getFilterValues();
   return isps.filter((isp) => {
+    // Dashboard always shows only ISPs with at least one APDR
+    if (!hasAPDR(isp)) return false;
     // Stat card filter
     if (dashStatFilter === 'plus'   && isp.level !== 'Targeted Plus') return false;
     if (dashStatFilter === 'review' && !isDueForReview(isp))          return false;
     if (dashStatFilter === 'term'   && !isCreatedThisTerm(isp))       return false;
     // Per-column filters
     for (const [col, val] of Object.entries(filters)) {
-      if (col === 'sen') { if (senCode(isp) !== val) return false; continue; }
+      if (col === 'sen') { if (senCode(isp) !== val.toUpperCase()) return false; continue; }
       const cell = String(isp[col] || '').toLowerCase();
       if (!cell.includes(val)) return false;
     }
@@ -1646,10 +1664,11 @@ function renderDashboard() {
   const empty = document.getElementById('dash-empty');
   const allISPs = state.isps;
 
-  document.getElementById('stat-total').textContent  = allISPs.length;
-  document.getElementById('stat-plus').textContent   = allISPs.filter(i => i.level === 'Targeted Plus').length;
-  document.getElementById('stat-review').textContent = allISPs.filter(isDueForReview).length;
-  document.getElementById('stat-term').textContent   = allISPs.filter(isCreatedThisTerm).length;
+  const apdrISPs = allISPs.filter(hasAPDR);
+  document.getElementById('stat-total').textContent  = apdrISPs.length;
+  document.getElementById('stat-plus').textContent   = apdrISPs.filter(i => i.level === 'Targeted Plus').length;
+  document.getElementById('stat-review').textContent = apdrISPs.filter(isDueForReview).length;
+  document.getElementById('stat-term').textContent   = apdrISPs.filter(isCreatedThisTerm).length;
 
   // Keep card active state in sync (e.g. after dashboard re-renders)
   ['all','plus','review','term'].forEach(k => {
@@ -1677,17 +1696,17 @@ function renderDashboard() {
   });
 
   if (!visible.length) {
-    tbody.innerHTML = `<tr><td colspan="10" style="padding:2rem;text-align:center;color:var(--muted);font-size:14px">No records match the current filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:2rem;text-align:center;color:var(--muted);font-size:14px">No records match the current filters.</td></tr>`;
     empty.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
 
   tbody.innerHTML = visible.map(isp => {
-    // Find original index for actions
     const idx = allISPs.indexOf(isp);
-    const areaLabels = (isp.areas||[]).map(k => AREA_LABELS[k]||k);
-    const apdrCount  = (isp.apdr||[]).length;
+    const apdrCount = (isp.apdr||[]).length;
+    const c = senCode(isp);
+    const senCol = c==='E'?'#b71c1c':c==='K+'?'#c07000':c==='K'?'#b8860b':'#2e7d32';
     return `<tr style="cursor:pointer" onclick="openISPPreview(${idx})" title="Click to view ISP">
       <td style="white-space:nowrap">
         <div style="display:flex;align-items:center;gap:8px">
@@ -1697,9 +1716,12 @@ function renderDashboard() {
       </td>
       <td>${(isp.year||'').replace(/^Year\s*/i,'')}</td>
       <td style="font-size:13px;color:var(--muted)">${isp.school||'—'}</td>
-      <td>${(() => { const c = senCode(isp); const col = c==='E'?'#b71c1c':c==='K'?'#b8860b':'#2e7d32'; return c ? `<span style="font-size:13px;font-weight:800;color:${col}">${c}</span>` : '<span style="color:var(--subtle)">—</span>'; })()}</td>
+      <td>${c ? `<span style="font-size:13px;font-weight:800;color:${senCol}">${c}</span>` : '<span style="color:var(--subtle)">—</span>'}</td>
       <td style="font-size:13px">${isp.staff||'—'}</td>
-      <td style="font-size:13px;color:var(--muted);white-space:nowrap">${fmtLastEdited(isp.lastEdited)}${apdrCount?` <span class="badge badge-blue" style="margin-left:4px">${apdrCount} APDR</span>`:''}</td>
+      <td style="text-align:center">
+        ${apdrCount ? `<span style="display:inline-block;min-width:24px;font-size:13px;font-weight:700;color:var(--teal)">${apdrCount}</span>` : '<span style="color:var(--subtle)">—</span>'}
+      </td>
+      <td style="font-size:13px;color:var(--muted);white-space:nowrap">${fmtLastEdited(isp.lastEdited)}</td>
       <td onclick="event.stopPropagation()" style="white-space:nowrap">
         <div style="display:flex;gap:4px;align-items:center">
           <button title="Edit" onclick="editISP(${idx})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px;color:var(--muted)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='none'">
