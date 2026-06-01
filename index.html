@@ -507,26 +507,21 @@
           <button class="btn-primary" onclick="showScreen('screen-arbor')">＋ New ISP</button>
         </div>
       </div>
-      <div class="stat-row">
-        <div class="stat-card card-green" id="sc-all" onclick="toggleStatFilter('all')" title="Show all ISPs">
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card" id="sc-roll" onclick="toggleStatFilter('roll')" title="Show all students on roll" style="background:var(--surface);border-color:var(--border)">
+          <div class="stat-label">Students on roll</div>
+          <div class="stat-value" id="stat-roll" style="color:#555">0</div>
+          <div class="stat-sub">all ISP records</div>
+        </div>
+        <div class="stat-card card-green active" id="sc-all" onclick="toggleStatFilter('all')" title="Show active ISPs (with APDRs)">
           <div class="stat-label">Active ISPs</div>
           <div class="stat-value" id="stat-total">0</div>
-          <div class="stat-sub">across the trust</div>
+          <div class="stat-sub">with at least one APDR</div>
         </div>
-        <div class="stat-card card-yellow" id="sc-plus" onclick="toggleStatFilter('plus')" title="Filter: Targeted Plus only">
-          <div class="stat-label">Targeted Plus</div>
-          <div class="stat-value" id="stat-plus">0</div>
-          <div class="stat-sub">higher need</div>
-        </div>
-        <div class="stat-card card-pink" id="sc-review" onclick="toggleStatFilter('review')" title="Filter: Due for review">
+        <div class="stat-card card-pink" id="sc-review" onclick="toggleStatFilter('review')" title="Filter: Due for review this term">
           <div class="stat-label">Due for review</div>
           <div class="stat-value" id="stat-review">0</div>
           <div class="stat-sub">not reviewed this term</div>
-        </div>
-        <div class="stat-card card-blue" id="sc-term" onclick="toggleStatFilter('term')" title="Filter: Created this term">
-          <div class="stat-label">Created this term</div>
-          <div class="stat-value" id="stat-term">0</div>
-          <div class="stat-sub">new plans</div>
         </div>
       </div>
       <div class="table-card">
@@ -1544,7 +1539,7 @@ function updateUserUI() {
 
 /* ── Dashboard sort/filter state ── */
 const dashSort = { col: 'apdrCount', dir: 'desc' };
-let dashStatFilter = 'all'; // 'all' | 'plus' | 'review' | 'term'
+let dashStatFilter = 'all'; // 'roll' | 'all' | 'review'
 
 function hasAPDR(isp) {
   return Array.isArray(isp.apdr) && isp.apdr.length > 0;
@@ -1576,9 +1571,9 @@ function isCreatedThisTerm(isp) {
 }
 
 function toggleStatFilter(key) {
-  dashStatFilter = (dashStatFilter === key) ? 'all' : key;
-  // Highlight the active card
-  ['all','plus','review','term'].forEach(k => {
+  // Clicking the active card again returns to 'all' (active ISPs), except 'roll' toggles back to 'all'
+  dashStatFilter = (dashStatFilter === key) ? (key === 'roll' ? 'all' : 'all') : key;
+  ['roll','all','review'].forEach(k => {
     const el = document.getElementById('sc-' + k);
     if (el) el.classList.toggle('active', dashStatFilter === k);
   });
@@ -1633,12 +1628,9 @@ function getFilterValues() {
 function filterISPs(isps) {
   const { filters, search } = getFilterValues();
   return isps.filter((isp) => {
-    // Dashboard always shows only ISPs with at least one APDR
-    if (!hasAPDR(isp)) return false;
-    // Stat card filter
-    if (dashStatFilter === 'plus'   && isp.level !== 'Targeted Plus') return false;
-    if (dashStatFilter === 'review' && !isDueForReview(isp))          return false;
-    if (dashStatFilter === 'term'   && !isCreatedThisTerm(isp))       return false;
+    // 'roll' shows everyone; 'all' and 'review' show only APDR students
+    if (dashStatFilter !== 'roll' && !hasAPDR(isp)) return false;
+    if (dashStatFilter === 'review' && !isDueForReview(isp)) return false;
     // Per-column filters
     for (const [col, val] of Object.entries(filters)) {
       if (col === 'sen') { if (senCode(isp) !== val.toUpperCase()) return false; continue; }
@@ -1680,13 +1672,11 @@ function renderDashboard() {
   const allISPs = deduplicateISPs(state.isps);
 
   const apdrISPs = allISPs.filter(hasAPDR);
+  document.getElementById('stat-roll').textContent   = allISPs.length;
   document.getElementById('stat-total').textContent  = apdrISPs.length;
-  document.getElementById('stat-plus').textContent   = apdrISPs.filter(i => i.level === 'Targeted Plus').length;
   document.getElementById('stat-review').textContent = apdrISPs.filter(isDueForReview).length;
-  document.getElementById('stat-term').textContent   = apdrISPs.filter(isCreatedThisTerm).length;
 
-  // Keep card active state in sync (e.g. after dashboard re-renders)
-  ['all','plus','review','term'].forEach(k => {
+  ['roll','all','review'].forEach(k => {
     const el = document.getElementById('sc-' + k);
     if (el) el.classList.toggle('active', dashStatFilter === k);
   });
