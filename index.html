@@ -1429,7 +1429,7 @@ function selectStudent(arborId) {
   infoCard.style.display = 'block';
   infoCard.innerHTML = `
     <div style="padding:1rem 1.25rem;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:1rem">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Live data from MIS</div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px">Attendance and Behaviour</div>
 
       <!-- Attendance + Suspensions in one white card -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px">
@@ -1519,7 +1519,9 @@ function selectStudent(arborId) {
     kssPkss: s['KSS/PKSS'] || '',
     behaviourPoints: bp !== '—' ? bp : '',
     attendance: attThisN !== null ? String(attThisN) : '',
+    attLast: attLastN !== null ? String(attLastN) : '',
     suspensions: susThis !== '—' ? susThis : '',
+    susLast: susLast !== '—' ? susLast : '',
     internalExclusions: intEx !== '—' ? intEx : '',
     lead: s['Lead Responsible'] || '',
     pupilPassportLink: s['Pupil Passport Link'] || '',
@@ -2009,6 +2011,7 @@ function goToISPForm() {
   state.step = 0;
   state.formData = {
     overview:      { diagnoses: prefill.diagnoses || '', staff: prefill.lead || '', attendance: prefill.attendance || '' },
+    mis:           { attThis: prefill.attendance||'', attLast: prefill.attLast||'', susThis: prefill.suspensions||'', susLast: prefill.susLast||'', bp: prefill.behaviourPoints||'', intEx: prefill.internalExclusions||'' },
     summary:       '',
     areas:         [],
     strengths:     {},
@@ -3007,10 +3010,11 @@ function vsOverview(isp, idx) {
         <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0">${isp.summary||'<em style="color:var(--subtle)">No summary recorded.</em>'}</p>
       </div>
 
-      <div style="padding:1rem 1.5rem;display:flex;flex-wrap:wrap;gap:1.5rem">
+      <div style="padding:1rem 1.5rem;display:flex;flex-wrap:wrap;gap:1.5rem;border-bottom:${isp.mis && (isp.mis.attThis||isp.mis.bp) ? '1px solid var(--border)' : 'none'}">
         ${[['Created',o.created||'—'],['Last reviewed',o.reviewed||'—'],['Diagnoses',(o.diagnoses||'—').replace(/^(ehcp|k\+|k|m)\s*[—\-–]\s*/i,'')],['Agencies',o.agencies||'—']].map(([k,v])=>`
           <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${k}</div><div style="font-size:13px;font-weight:600">${v}</div></div>`).join('')}
       </div>
+      ${isp.mis ? `<div style="padding:1rem 1.5rem">${misSummaryBlock(isp.mis, false)}</div>` : ''}
     </div>`;
 }
 
@@ -3690,6 +3694,7 @@ function finaliseISP() {
       updated: today,
       lastEdited: nowISO,
       overview:  { ...o },
+      mis:       fd.mis ? { ...fd.mis } : (existing.mis || {}),
       summary:   fd.summary || '',
       strengths: { ...fd.strengths },
       needs:     { ...fd.needs },
@@ -3719,7 +3724,7 @@ function finaliseISP() {
       gender: state.student.gender||'', dob: state.student.dob||'',
       level: o.level||'Targeted', areas: fd.areas, staff: o.staff||'—', updated: today,
       lastEdited: nowISO,
-      overview: { ...o }, summary: fd.summary||'',
+      overview: { ...o }, mis: fd.mis ? { ...fd.mis } : {}, summary: fd.summary||'',
       strengths: { ...fd.strengths }, needs: { ...fd.needs }, advice: { ...fd.advice },
       strategies:{ ...fd.strategies }, seating: { ...fd.seating }, riskFlags: [...(fd.riskFlags||[])],
       health: { ...fd.health },
@@ -3973,6 +3978,61 @@ function renderISPPreview(idx) {
     </div>`;
 }
 
+/* ── MIS summary block — shared between ISP view and PDF ── */
+function misSummaryBlock(mis, forPDF) {
+  if (!mis) return '';
+  const hasAny = mis.attThis || mis.susThis || mis.bp || mis.intEx;
+  if (!hasAny) return '';
+
+  function normAtt(v) {
+    const n = parseFloat(v);
+    if (isNaN(n)) return null;
+    return n > 0 && n <= 1 ? Math.round(n*1000)/10 : Math.round(n*10)/10;
+  }
+  const attThisN = normAtt(mis.attThis);
+  const attLastN = normAtt(mis.attLast);
+  const attDelta = (attThisN !== null && attLastN !== null) ? (attThisN - attLastN) : null;
+  const fmtAtt   = n => n !== null ? n.toFixed(1)+'%' : '—';
+  const attDeltaStr = attDelta !== null ? (attDelta >= 0 ? `+${attDelta.toFixed(1)}%` : `${attDelta.toFixed(1)}%`) : '';
+  const attDeltaCol = attDelta !== null ? (attDelta >= 0 ? '#27ae60' : '#c0392b') : '#888';
+
+  const susThisN = parseFloat(mis.susThis);
+  const susLastN = parseFloat(mis.susLast);
+  const susDiff  = (!isNaN(susThisN) && !isNaN(susLastN)) ? (susThisN - susLastN) : null;
+  const susDiffStr = susDiff !== null ? (susDiff >= 0 ? `+${susDiff}` : `${susDiff}`) + ' day' + (Math.abs(susDiff)!==1?'s':'') : '';
+  const susDiffCol = susDiff !== null ? (susDiff > 0 ? '#c0392b' : '#27ae60') : '#888';
+
+  const bpNum   = parseFloat(mis.bp);
+  const bpColor = isNaN(bpNum) ? '#555' : bpNum < 0 ? '#c0392b' : '#27ae60';
+
+  function chip(str, col) {
+    if (!str) return '';
+    return `<span style="font-size:${forPDF?'9px':'11px'};font-weight:600;color:${col};background:${col}15;border:1px solid ${col}35;border-radius:20px;padding:2px 7px;white-space:nowrap">${str}</span>`;
+  }
+  function trow(label, from, to, chipHtml) {
+    const fs = forPDF ? '10px' : '12px';
+    const fsL = forPDF ? '9px' : '10px';
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:${forPDF?'3px':'5px'}">
+      <span style="font-size:${fsL};font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.04em;min-width:${forPDF?'72px':'90px'}">${label}</span>
+      ${from ? `<span style="font-size:${fs};color:#555;font-weight:600">${from}</span><span style="color:#ccc;font-size:10px">→</span>` : ''}
+      <span style="font-size:${fs};color:#333;font-weight:700">${to}</span>
+      ${chipHtml}
+    </div>`;
+  }
+  const pd = forPDF ? '8px 10px' : '10px 14px';
+  const mb = forPDF ? '6px' : '10px';
+  return `
+    <div style="margin-bottom:${mb};padding:${pd};background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px">
+      <div style="font-size:${forPDF?'8px':'10px'};font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:${forPDF?'5px':'8px'}">Attendance and Behaviour</div>
+      ${(attThisN !== null) ? trow('Attendance', attLastN !== null ? fmtAtt(attLastN)+' last term' : '', fmtAtt(attThisN), chip(attDeltaStr, attDeltaCol)) : ''}
+      ${(mis.susThis) ? trow('Suspensions', mis.susLast ? mis.susLast+' last yr' : '', mis.susThis+' this yr', chip(susDiffStr, susDiffCol)) : ''}
+      ${(mis.bp || mis.intEx) ? `<div style="display:flex;gap:${forPDF?'10px':'14px'};margin-top:${forPDF?'3px':'5px'}">
+        ${mis.bp ? `<div><span style="font-size:${forPDF?'9px':'10px'};color:#888;display:block">Behaviour pts</span><span style="font-size:${forPDF?'11px':'13px'};font-weight:700;color:${bpColor}">${mis.bp}</span></div>` : ''}
+        ${mis.intEx ? `<div><span style="font-size:${forPDF?'9px':'10px'};color:#888;display:block">Internal excl.</span><span style="font-size:${forPDF?'11px':'13px'};font-weight:700;color:#e67e22">${mis.intEx}</span></div>` : ''}
+      </div>` : ''}
+    </div>`;
+}
+
 /* ══════════════════════════════════════════════════════════════════
    GRADUATED RESPONSE — functions
 ═══════════════════════════════════════════════════════════════════ */
@@ -4090,6 +4150,7 @@ function buildISPPDF(src) {
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#666;margin-bottom:6px">Key support strategies for all staff</div>
       ${strategiesHtml}
       ${src.summary?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid #e5e5e5;font-size:11px;color:#444;line-height:1.5"><strong>Student summary:</strong> ${src.summary}</div>`:''}
+      ${src.mis ? misSummaryBlock(src.mis, true) : ''}
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e5e5e5;display:flex;justify-content:space-between;font-size:9px;color:#999">
         <span>ISP created: ${o.created||'—'} · Last reviewed: ${o.reviewed||'—'}</span>
         <span>Confidential — for authorised staff only · Do not leave unattended</span>
