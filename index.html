@@ -2302,25 +2302,26 @@ function renderStep1(el) {
       <label>Risk / alert flags</label>
       <div class="hint" style="margin-bottom:6px">Select any that apply — these will appear prominently on the one-page teacher summary.</div>
       <div class="chip-group">
-        ${RISK_FLAGS.map(f=>`<button class="chip risk-chip ${(fd.riskFlags||[]).includes(f.key)?'selected':''}" data-flag="${f.key}" onclick="toggleRiskChip(this,'${f.color}')" style="${(fd.riskFlags||[]).includes(f.key)?'background:'+f.color+'20;border-color:'+f.color+';color:'+f.color:''}">${f.icon} ${f.label}</button>`).join('')}
+        ${RISK_FLAGS.map(f=>{ const sel=(fd.riskFlags||[]).includes(f.key); const RED='#c0392b'; return `<button class="chip risk-chip ${sel?'selected':''}" data-flag="${f.key}" onclick="toggleRiskChip(this)" style="${sel?'background:'+RED+'18;border-color:'+RED+';color:'+RED:''}">${f.icon} ${f.label}</button>`; }).join('')}
       </div>
     </div>
     <div class="field">
       <label>Which development areas apply to this student?</label>
       <div class="chip-group">
-        ${areas.map(k => `<button class="chip area-chip ${fd.areas.includes(k)?'selected':''}" data-key="${k}" onclick="toggleArea(this)">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</button>`).join('')}
+        ${areas.map(k=>{ const sel=fd.areas.includes(k); const c=AREA_COLOR[k]; return `<button class="chip area-chip ${sel?'selected':''}" data-key="${k}" onclick="toggleArea(this)" style="${sel&&c?'background:'+c+'18;border-color:'+c+';color:'+c:''}">${AREA_ICON[k]||''} ${AREA_LABELS[k]}</button>`; }).join('')}
       </div>
     </div>
     <div id="area-detail-panels"></div>`;
   renderAreaPanels();
 }
 
-function toggleRiskChip(btn, color) {
+function toggleRiskChip(btn) {
+  const RED = '#c0392b';
   btn.classList.toggle('selected');
   if (btn.classList.contains('selected')) {
-    btn.style.background = color + '20';
-    btn.style.borderColor = color;
-    btn.style.color = color;
+    btn.style.background = RED + '18';
+    btn.style.borderColor = RED;
+    btn.style.color = RED;
   } else {
     btn.style.background = '';
     btn.style.borderColor = '';
@@ -2331,8 +2332,14 @@ function toggleRiskChip(btn, color) {
 function toggleArea(btn) {
   btn.classList.toggle('selected');
   const key = btn.dataset.key;
-  if (btn.classList.contains('selected')) { if (!state.formData.areas.includes(key)) state.formData.areas.push(key); }
-  else { state.formData.areas = state.formData.areas.filter(k=>k!==key); }
+  const color = AREA_COLOR[key];
+  if (btn.classList.contains('selected')) {
+    if (!state.formData.areas.includes(key)) state.formData.areas.push(key);
+    if (color) { btn.style.background = color+'18'; btn.style.borderColor = color; btn.style.color = color; }
+  } else {
+    state.formData.areas = state.formData.areas.filter(k=>k!==key);
+    btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = '';
+  }
   renderAreaPanels();
 }
 
