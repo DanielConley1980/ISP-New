@@ -3010,11 +3010,11 @@ function vsOverview(isp, idx) {
         <p style="font-size:13px;color:var(--text);line-height:1.7;margin:0">${isp.summary||'<em style="color:var(--subtle)">No summary recorded.</em>'}</p>
       </div>
 
-      <div style="padding:1rem 1.5rem;display:flex;flex-wrap:wrap;gap:1.5rem;border-bottom:${isp.mis && (isp.mis.attThis||isp.mis.bp) ? '1px solid var(--border)' : 'none'}">
+      <div style="padding:1rem 1.5rem;display:flex;flex-wrap:wrap;gap:1.5rem;border-bottom:1px solid var(--border)">
         ${[['Created',o.created||'—'],['Last reviewed',o.reviewed||'—'],['Diagnoses',(o.diagnoses||'—').replace(/^(ehcp|k\+|k|m)\s*[—\-–]\s*/i,'')],['Agencies',o.agencies||'—']].map(([k,v])=>`
           <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${k}</div><div style="font-size:13px;font-weight:600">${v}</div></div>`).join('')}
       </div>
-      ${isp.mis ? `<div style="padding:1rem 1.5rem">${misSummaryBlock(isp.mis, false)}</div>` : ''}
+      ${(()=>{ const mis = isp.mis && (isp.mis.attThis||isp.mis.bp||isp.mis.susThis) ? isp.mis : (o.attendance ? {attThis:o.attendance} : null); return mis ? `<div style="padding:1rem 1.5rem">${misSummaryBlock(mis, false)}</div>` : ''; })()}
     </div>`;
 }
 
@@ -4150,7 +4150,7 @@ function buildISPPDF(src) {
       <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#666;margin-bottom:6px">Key support strategies for all staff</div>
       ${strategiesHtml}
       ${src.summary?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid #e5e5e5;font-size:11px;color:#444;line-height:1.5"><strong>Student summary:</strong> ${src.summary}</div>`:''}
-      ${src.mis ? misSummaryBlock(src.mis, true) : ''}
+      ${(()=>{ const mis = src.mis && (src.mis.attThis||src.mis.bp||src.mis.susThis) ? src.mis : (o.attendance ? {attThis:o.attendance} : null); return mis ? misSummaryBlock(mis, true) : ''; })()}
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #e5e5e5;display:flex;justify-content:space-between;font-size:9px;color:#999">
         <span>ISP created: ${o.created||'—'} · Last reviewed: ${o.reviewed||'—'}</span>
         <span>Confidential — for authorised staff only · Do not leave unattended</span>
