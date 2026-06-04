@@ -3102,7 +3102,29 @@ function vsOverview(isp, idx) {
         ${[['Created',o.created||'—'],['Last reviewed',o.reviewed||'—'],['Diagnoses',(o.diagnoses||'—').replace(/^(ehcp|k\+|k|m)\s*[—\-–]\s*/i,'')],['Agencies',o.agencies||'—']].map(([k,v])=>`
           <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${k}</div><div style="font-size:13px;font-weight:600">${v}</div></div>`).join('')}
       </div>
-      ${(()=>{ const mis = isp.mis && (isp.mis.attThis||isp.mis.bp||isp.mis.susThis) ? isp.mis : (o.attendance ? {attThis:o.attendance} : null); return mis ? `<div style="padding:1rem 1.5rem">${misSummaryBlock(mis, false)}</div>` : ''; })()}
+      ${(()=>{
+        // Live lookup from sheet students (same logic as student info card)
+        const arborId = String(isp.arborId||'');
+        let ss = arborId ? (state.sheetStudents||[]).find(x=>String(x['Arbor ID'])===arborId||String(x['UPN'])===arborId) : null;
+        if (!ss && isp.name) { const nn=normName(isp.name); ss=(state.sheetStudents||[]).find(x=>normName(x['Pupil Name']||'')===nn); }
+        let mis = null;
+        if (ss) {
+          function normAttL(v){const n=parseFloat(v);if(isNaN(n))return null;return n>0&&n<=1?Math.round(n*1000)/10:Math.round(n*10)/10;}
+          const pct=sheetVal(ss,'Present','Attendance %','Attendance','Att %','Att%','attendance');
+          const attThisN=normAttL(sheetVal(ss,'Attendance This Term','Att This Term','This Term Attendance','Current Term Attendance')||pct);
+          const attLastN=normAttL(sheetVal(ss,'Attendance Last Term','Att Last Term','Last Term Attendance','Previous Term Attendance'));
+          const susThis=sheetVal(ss,'Suspensions this Year','Suspensions This Year','Suspensions','Sus This Year');
+          const susLast=sheetVal(ss,'Suspensions Last Year','Sus Last Year','Previous Year Suspensions');
+          const bp=sheetVal(ss,'Behaviour Points','Behaviour Pts','BehaviourPoints');
+          const intEx=sheetVal(ss,'Internal Exclusions this Year','Internal Exclusions','Internal Excl','Int Excl');
+          if (attThisN!==null||susThis||bp||intEx) {
+            mis={attThis:attThisN!==null?String(attThisN):'',attLast:attLastN!==null?String(attLastN):'',susThis,susLast,bp,intEx};
+          }
+        }
+        // fallback to stored mis or bare attendance
+        if (!mis) mis = (isp.mis&&(isp.mis.attThis||isp.mis.bp||isp.mis.susThis)) ? isp.mis : (o.attendance?{attThis:o.attendance}:null);
+        return mis ? `<div style="padding:1rem 1.5rem">${misSummaryBlock(mis,false)}</div>` : '';
+      })()}
     </div>`;
 }
 
