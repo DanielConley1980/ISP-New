@@ -1243,35 +1243,47 @@ function suppressSheetRecord(id, arborId, name) {
 function loadSheetUrl() { return localStorage.getItem(SHEET_URL_KEY) || DEFAULT_SHEET_URL; }
 function saveSheetUrlLocal(url) { try { localStorage.setItem(SHEET_URL_KEY, url); } catch(e) {} }
 
+function backfillMISFromSheet() {
+  const students = state.sheetStudents || [];
+  if (!students.length) return;
+  state.isps.forEach(isp => {
+    const arborId = String(isp.arborId || '');
+    const s = arborId ? students.find(x => String(x['Arbor ID']) === arborId || String(x['UPN']) === arborId) : null;
+    if (!s) return;
+    function sv(...keys) {
+      const ks = Object.keys(s);
+      for (const k of keys) {
+        const kl = k.toLowerCase();
+        const match = ks.find(x => x.toLowerCase() === kl) || ks.find(x => x.toLowerCase().includes(kl));
+        if (match && s[match] !== '' && s[match] != null) return String(s[match]).trim();
+      }
+      return '';
+    }
+    function normAttV(v) { const n = parseFloat(v); if (isNaN(n)) return ''; return n > 0 && n <= 1 ? String(Math.round(n*1000)/10) : String(Math.round(n*10)/10); }
+    const attThis = normAttV(sv('Attendance This Term','Att This Term','This Term Attendance','Current Term Attendance','Present','Attendance %','Attendance','Att %','Att%'));
+    const attLast = normAttV(sv('Attendance Last Term','Att Last Term','Last Term Attendance','Previous Term Attendance'));
+    const susThis = sv('Suspensions this Year','Suspensions This Year','Suspensions','Sus This Year');
+    const susLast = sv('Suspensions Last Year','Sus Last Year','Previous Year Suspensions');
+    const bp      = sv('Behaviour Points','Behaviour Pts','BehaviourPoints');
+    const intEx   = sv('Internal Exclusions this Year','Internal Exclusions','Internal Excl','Int Excl');
+    const ex = isp.mis || {};
+    isp.mis = {
+      attThis: attThis || ex.attThis || '',
+      attLast: attLast || ex.attLast || '',
+      susThis: susThis || ex.susThis || '',
+      susLast: susLast || ex.susLast || '',
+      bp:      bp      || ex.bp      || '',
+      intEx:   intEx   || ex.intEx   || '',
+    };
+  });
+}
+
 async function loadSheetData() {
   if (!state.sheetUrl) return;
   try {
     const r = await fetch(state.sheetUrl, { cache: 'no-store' });
     const d = await r.json();
     state.sheetStudents = d.students || [];
-    // Backfill MIS data from sheet students into local ISPs
-    state.isps.forEach(isp => {
-      const arborId = String(isp.arborId || '');
-      const s = arborId ? state.sheetStudents.find(x => String(x['Arbor ID']) === arborId || String(x['UPN']) === arborId) : null;
-      if (!s) return;
-      function sv(...keys) { for (const k of keys) { const v = s[k]; if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim(); } return ''; }
-      function normAttV(v) { const n = parseFloat(v); if (isNaN(n)) return ''; return n > 0 && n <= 1 ? String(Math.round(n*1000)/10) : String(Math.round(n*10)/10); }
-      const attThis = normAttV(sv('Attendance This Term','Att This Term','This Term Attendance','Current Term Attendance','Present','Attendance %','Attendance','Att %','Att%','attendance'));
-      const attLast = normAttV(sv('Attendance Last Term','Att Last Term','Last Term Attendance','Previous Term Attendance'));
-      const susThis = sv('Suspensions this Year','Suspensions This Year','Suspensions','Sus This Year');
-      const susLast = sv('Suspensions Last Year','Sus Last Year','Previous Year Suspensions');
-      const bp      = sv('Behaviour Points','Behaviour Pts','BehaviourPoints');
-      const intEx   = sv('Internal Exclusions this Year','Internal Exclusions','Internal Excl','Int Excl');
-      const existing = isp.mis || {};
-      isp.mis = {
-        attThis: attThis || existing.attThis || '',
-        attLast: attLast || existing.attLast || '',
-        susThis: susThis || existing.susThis || '',
-        susLast: susLast || existing.susLast || '',
-        bp:      bp      || existing.bp      || '',
-        intEx:   intEx   || existing.intEx   || '',
-      };
-    });
     if (d.isps && d.isps.length) {
       const sheetFiltered = d.isps.filter(i => { try { return !isDeletedFingerprint(i); } catch(e) { return true; } });
       // Only update ISPs that already have a local counterpart; don't silently add unrecognised ones
@@ -1293,8 +1305,15 @@ async function loadSheetData() {
       const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
       state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
       applyDataFixes();
+      // Backfill MIS data from sheet students now that merge is complete
+      backfillMISFromSheet();
       saveISPs();
       renderDashboard();
+    }
+    // If no ISP merge happened above, still backfill MIS from students
+    if (!(d.isps && d.isps.length)) {
+      backfillMISFromSheet();
+      saveISPs();
     }
     const n = state.sheetStudents.length;
     const badge = document.getElementById('sheet-badge');
