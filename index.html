@@ -3169,6 +3169,7 @@ function vsOverview(isp, idx) {
         ${[['Created',o.created||'—'],['Last reviewed',o.reviewed||'—'],['Diagnoses',(o.diagnoses||'—').replace(/^(ehcp|k\+|k|m)\s*[—\-–]\s*/i,'')],['Agencies',o.agencies||'—']].map(([k,v])=>`
           <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">${k}</div><div style="font-size:13px;font-weight:600">${v}</div></div>`).join('')}
       </div>
+      <div style="padding:0.5rem 1.5rem;font-size:10px;color:#aaa;border-top:1px solid #eee">DEBUG arborId=${isp.arborId} mis=${JSON.stringify(misSummary)}</div>
       ${misSummary ? `<div style="padding:1rem 1.5rem">${misSummaryBlock(misSummary, false)}</div>` : ''}
     </div>`;
 }
