@@ -4191,7 +4191,7 @@ function misSummaryBlock(mis, forPDF) {
 
   // ISP view — 2×2 card grid
   function misCard(title, content) {
-    return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--surface)">
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--surface);text-align:center">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px">${title}</div>
       ${content}
     </div>`;
@@ -4201,14 +4201,14 @@ function misSummaryBlock(mis, forPDF) {
   function subLabel(t) { return `<div style="font-size:10px;color:var(--muted);margin-top:2px">${t}</div>`; }
 
   const attContent = attThisN !== null ? `
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
       ${attLastN !== null ? `<div style="text-align:center">${bigVal(fmtAtt(attLastN),'#888')}${subLabel('Last term')}</div>${arrow()}` : ''}
       <div style="text-align:center">${bigVal(fmtAtt(attThisN), attDelta !== null ? attDeltaCol : '#333')}${subLabel(attLastN !== null ? 'This term' : 'Attendance')}</div>
       ${attDeltaStr ? chip(attDeltaStr, attDeltaCol) : ''}
     </div>` : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
 
   const susContent = mis.susThis ? `
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
       ${!isNaN(susLastN) ? `<div style="text-align:center">${bigVal(mis.susLast,'#888')}${subLabel('Last year')}</div>${arrow()}` : ''}
       <div style="text-align:center">${bigVal(mis.susThis, susDiff !== null && susDiff > 0 ? '#c0392b' : '#333')}${subLabel(!isNaN(susLastN) ? 'This year' : 'Suspensions')}</div>
       ${susDiffStr ? chip(susDiffStr, susDiffCol) : ''}
