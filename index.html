@@ -1209,6 +1209,22 @@ function saveISPs() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.isps)); } catch(e) {}
 }
 
+const DELETED_KEY = 'isp-deleted-fingerprints';
+function loadDeletedFingerprints() {
+  try { return JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveDeletedFingerprint(isp) {
+  const list = loadDeletedFingerprints();
+  list.push({ id: isp.id||'', arborId: String(isp.arborId||''), name: (isp.name||'').trim().toLowerCase() });
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(list)); } catch(e) {}
+}
+function isDeletedFingerprint(isp) {
+  const list = loadDeletedFingerprints();
+  const aid  = String(isp.arborId||'');
+  const name = (isp.name||'').trim().toLowerCase();
+  return list.some(f => (f.id && f.id === isp.id) || (f.arborId && f.arborId === aid) || (f.name && f.name === name));
+}
+
 function loadSheetUrl() { return localStorage.getItem(SHEET_URL_KEY) || DEFAULT_SHEET_URL; }
 function saveSheetUrlLocal(url) { try { localStorage.setItem(SHEET_URL_KEY, url); } catch(e) {} }
 
@@ -1220,9 +1236,10 @@ async function loadSheetData() {
     state.sheetStudents = d.students || [];
     if (d.isps && d.isps.length) {
       // Merge: sheet wins for any ISP that exists in both; keep local-only ISPs too
-      const sheetIds = new Set(d.isps.map(i => i.id));
-      const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
-      state.isps = deduplicateISPs([...d.isps, ...localOnly]);
+      const sheetFiltered = d.isps.filter(i => !isDeletedFingerprint(i));
+      const sheetIds = new Set(sheetFiltered.map(i => i.id));
+      const localOnly = state.isps.filter(i => !sheetIds.has(i.id) && !isDeletedFingerprint(i));
+      state.isps = deduplicateISPs([...sheetFiltered, ...localOnly]);
       saveISPs();
       renderDashboard();
     }
@@ -1834,6 +1851,7 @@ function idxById(id) { return state.isps.findIndex(i => i.id === id); }
 function deleteISP(idx) {
   const isp = state.isps[idx];
   if (!confirm(`Delete the ISP for ${isp.name}? This cannot be undone.`)) return;
+  saveDeletedFingerprint(isp);
   state.isps.splice(idx, 1);
   saveISPs();
   renderDashboard();
