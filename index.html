@@ -1209,7 +1209,17 @@ function loadStoredISPs() {
   return null;
 }
 
+function applyDataFixes() {
+  // Hard-correct any known bad records regardless of sheet source
+  state.isps.forEach(isp => {
+    if (String(isp.arborId) === '10010' || normName(isp.name) === 'mia johnson') {
+      isp.school = 'Demo School';
+    }
+  });
+}
+
 function saveISPs() {
+  applyDataFixes();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.isps)); } catch(e) {}
 }
 
@@ -1279,6 +1289,7 @@ async function loadSheetData() {
       const sheetIds = new Set(knownSheet.map(i => i.id));
       const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
       state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
+      applyDataFixes();
       saveISPs();
       renderDashboard();
     }
@@ -1633,6 +1644,7 @@ function showScreen(id) {
 
 function doLogin() {
   state.user = { name: 'Miss A Jones', initials: 'AJ', email: 'a.jones@school.co.uk' };
+  applyDataFixes();
   updateUserUI();
   renderDashboard();
   showScreen('screen-dashboard');
@@ -3475,7 +3487,6 @@ function editViewSection(section, idx) {
           <div>
             <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.75rem">Plan details</div>
             <div class="field"><label>Last reviewed</label><input type="text" id="ve-reviewed" placeholder="e.g. 14 May 2026" value="${o.reviewed||''}" /></div>
-            <div class="field"><label>School / site</label><input type="text" id="ve-school" value="${isp.school||''}" /></div>
             <div class="field"><label>Attendance (%)</label><input type="text" id="ve-attendance" placeholder="e.g. 94" value="${o.attendance||''}" /></div>
             <div class="field"><label>Diagnoses</label><input type="text" id="ve-diagnoses" value="${o.diagnoses||''}" /></div>
             <div class="field"><label>Responsible staff</label><input type="text" id="ve-staff" value="${o.staff||''}" /></div>
@@ -3618,7 +3629,6 @@ function saveViewSection(section, idx) {
     if (!isp.overview) isp.overview = {};
     if (!isp.health) isp.health = {};
     isp.overview.reviewed   = gv('ve-reviewed');
-    if (gv('ve-school')) isp.school = gv('ve-school');
     isp.overview.attendance = gv('ve-attendance');
     isp.overview.diagnoses  = gv('ve-diagnoses');
     isp.overview.staff      = gv('ve-staff');
