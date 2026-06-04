@@ -1249,6 +1249,29 @@ async function loadSheetData() {
     const r = await fetch(state.sheetUrl, { cache: 'no-store' });
     const d = await r.json();
     state.sheetStudents = d.students || [];
+    // Backfill MIS data from sheet students into local ISPs
+    state.isps.forEach(isp => {
+      const arborId = String(isp.arborId || '');
+      const s = arborId ? state.sheetStudents.find(x => String(x['Arbor ID']) === arborId || String(x['UPN']) === arborId) : null;
+      if (!s) return;
+      function sv(...keys) { for (const k of keys) { const v = s[k]; if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim(); } return ''; }
+      function normAttV(v) { const n = parseFloat(v); if (isNaN(n)) return ''; return n > 0 && n <= 1 ? String(Math.round(n*1000)/10) : String(Math.round(n*10)/10); }
+      const attThis = normAttV(sv('Attendance This Term','Att This Term','This Term Attendance','Current Term Attendance','Present','Attendance %','Attendance','Att %','Att%','attendance'));
+      const attLast = normAttV(sv('Attendance Last Term','Att Last Term','Last Term Attendance','Previous Term Attendance'));
+      const susThis = sv('Suspensions this Year','Suspensions This Year','Suspensions','Sus This Year');
+      const susLast = sv('Suspensions Last Year','Sus Last Year','Previous Year Suspensions');
+      const bp      = sv('Behaviour Points','Behaviour Pts','BehaviourPoints');
+      const intEx   = sv('Internal Exclusions this Year','Internal Exclusions','Internal Excl','Int Excl');
+      const existing = isp.mis || {};
+      isp.mis = {
+        attThis: attThis || existing.attThis || '',
+        attLast: attLast || existing.attLast || '',
+        susThis: susThis || existing.susThis || '',
+        susLast: susLast || existing.susLast || '',
+        bp:      bp      || existing.bp      || '',
+        intEx:   intEx   || existing.intEx   || '',
+      };
+    });
     if (d.isps && d.isps.length) {
       const sheetFiltered = d.isps.filter(i => { try { return !isDeletedFingerprint(i); } catch(e) { return true; } });
       // Only update ISPs that already have a local counterpart; don't silently add unrecognised ones
