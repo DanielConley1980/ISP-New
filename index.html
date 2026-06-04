@@ -1215,13 +1215,13 @@ function loadDeletedFingerprints() {
 }
 function saveDeletedFingerprint(isp) {
   const list = loadDeletedFingerprints();
-  list.push({ id: isp.id||'', arborId: String(isp.arborId||''), name: (isp.name||'').trim().toLowerCase() });
+  list.push({ id: isp.id||'', arborId: String(isp.arborId||''), name: normName(isp.name) });
   try { localStorage.setItem(DELETED_KEY, JSON.stringify(list)); } catch(e) {}
 }
 function isDeletedFingerprint(isp) {
   const list = loadDeletedFingerprints();
   const aid  = String(isp.arborId||'');
-  const name = (isp.name||'').trim().toLowerCase();
+  const name = normName(isp.name);
   return list.some(f => (f.id && f.id === isp.id) || (f.arborId && f.arborId === aid) || (f.name && f.name === name));
 }
 
@@ -1239,7 +1239,12 @@ async function loadSheetData() {
       const sheetFiltered = d.isps.filter(i => !isDeletedFingerprint(i));
       const sheetIds = new Set(sheetFiltered.map(i => i.id));
       const localOnly = state.isps.filter(i => !sheetIds.has(i.id) && !isDeletedFingerprint(i));
-      state.isps = deduplicateISPs([...sheetFiltered, ...localOnly]);
+      const merged = deduplicateISPs([...sheetFiltered, ...localOnly]);
+      // Log any names that appear more than once before dedup (helps diagnose sheet duplicates)
+      const nameCounts = {};
+      [...sheetFiltered, ...localOnly].forEach(i => { const k = normName(i.name); nameCounts[k] = (nameCounts[k]||0)+1; });
+      Object.entries(nameCounts).filter(([,v])=>v>1).forEach(([k,v]) => console.warn('ISP duplicate in merge:', k, '×'+v));
+      state.isps = merged;
       saveISPs();
       renderDashboard();
     }
@@ -1738,6 +1743,10 @@ function applyFilters() {
 }
 
 /* ── Dashboard ── */
+function normName(n) {
+  return (n||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/[^a-z0-9 ]/g,'');
+}
+
 function deduplicateISPs(isps) {
   // One row per student: deduplicate by arborId first, then name as fallback.
   // Keep the most recently edited version.
@@ -1746,7 +1755,7 @@ function deduplicateISPs(isps) {
   const result    = [];
   for (const isp of isps) {
     const arborKey = isp.arborId ? String(isp.arborId) : null;
-    const nameKey  = (isp.name || '').trim().toLowerCase();
+    const nameKey  = normName(isp.name);
     // Check for existing match by arborId OR name
     const existing = (arborKey && byArborId.get(arborKey)) || (nameKey && byName.get(nameKey));
     const ts = isp.lastEdited ? new Date(isp.lastEdited).getTime() : 0;
