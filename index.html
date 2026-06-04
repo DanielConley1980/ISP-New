@@ -558,6 +558,10 @@
         <div id="dash-empty" style="padding:3rem;text-align:center;color:var(--muted);font-size:14px;display:none">No ISPs yet. Create one to get started.</div>
       </div>
     </div>
+    <div id="sheet-unknown-banner" style="display:none;margin:0 1.5rem 1rem;padding:10px 14px;background:#FFF8E1;border:1px solid #F0C040;border-radius:6px;font-size:13px;color:#7A5F00">
+      <strong>⚠ Unrecognised records from sheet</strong> — the following names exist in the sheet but not locally. Click a name to suppress it:
+      <div id="sheet-unknown-list" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
   </div>
 
   <!-- ════════════════════════════════════════════
@@ -1225,6 +1229,11 @@ function isDeletedFingerprint(isp) {
   return list.some(f => (f.id && f.id === isp.id) || (f.arborId && f.arborId === aid) || (f.name && f.name === name));
 }
 
+function suppressSheetRecord(id, arborId, name) {
+  saveDeletedFingerprint({ id, arborId, name });
+  loadSheetData();
+}
+
 function loadSheetUrl() { return localStorage.getItem(SHEET_URL_KEY) || DEFAULT_SHEET_URL; }
 function saveSheetUrlLocal(url) { try { localStorage.setItem(SHEET_URL_KEY, url); } catch(e) {} }
 
@@ -1235,16 +1244,35 @@ async function loadSheetData() {
     const d = await r.json();
     state.sheetStudents = d.students || [];
     if (d.isps && d.isps.length) {
-      // Merge: sheet wins for any ISP that exists in both; keep local-only ISPs too
       const sheetFiltered = d.isps.filter(i => !isDeletedFingerprint(i));
-      const sheetIds = new Set(sheetFiltered.map(i => i.id));
-      const localOnly = state.isps.filter(i => !sheetIds.has(i.id) && !isDeletedFingerprint(i));
-      const merged = deduplicateISPs([...sheetFiltered, ...localOnly]);
-      // Log any names that appear more than once before dedup (helps diagnose sheet duplicates)
-      const nameCounts = {};
-      [...sheetFiltered, ...localOnly].forEach(i => { const k = normName(i.name); nameCounts[k] = (nameCounts[k]||0)+1; });
-      Object.entries(nameCounts).filter(([,v])=>v>1).forEach(([k,v]) => console.warn('ISP duplicate in merge:', k, '×'+v));
-      state.isps = merged;
+      // Only allow sheet ISPs that already have a local counterpart (by id, arborId, or name)
+      const localNames   = new Set(state.isps.map(i => normName(i.name)));
+      const localArborIds = new Set(state.isps.map(i => String(i.arborId||'')).filter(Boolean));
+      const localIds     = new Set(state.isps.map(i => i.id));
+      const knownSheet   = sheetFiltered.filter(i =>
+        localIds.has(i.id) || localArborIds.has(String(i.arborId||'')) || localNames.has(normName(i.name))
+      );
+      const unknownSheet = sheetFiltered.filter(i =>
+        !localIds.has(i.id) && !localArborIds.has(String(i.arborId||'')) && !localNames.has(normName(i.name))
+      );
+      // Show banner for unrecognised records so the user can identify and suppress them
+      const banner = document.getElementById('sheet-unknown-banner');
+      const bannerList = document.getElementById('sheet-unknown-list');
+      if (banner && bannerList) {
+        if (unknownSheet.length) {
+          bannerList.innerHTML = unknownSheet.map(i =>
+            `<button onclick="suppressSheetRecord('${i.id}','${(i.arborId||'')}','${(i.name||'').replace(/'/g,'\\'+'\'')}')"
+              style="font-size:12px;padding:3px 10px;border:1px solid #c0a030;border-radius:20px;background:#fff8d0;cursor:pointer;color:#7A5F00">
+              ${i.name||'Unknown'} (${i.arborId||'no ID'})
+            </button>`).join('');
+          banner.style.display = 'block';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+      const sheetIds = new Set(knownSheet.map(i => i.id));
+      const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
+      state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
       saveISPs();
       renderDashboard();
     }
@@ -1846,9 +1874,6 @@ function renderDashboard() {
           <button title="Download PDF" onclick="downloadExistingPDFById('${ispId}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px;color:var(--muted)" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='none'">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </button>
-          <button title="Delete" onclick="deleteISPById('${ispId}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px;color:var(--red)" onmouseover="this.style.background='var(--red-light)'" onmouseout="this.style.background='none'">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-          </button>
         </div>
       </td>
     </tr>`;
@@ -1857,15 +1882,7 @@ function renderDashboard() {
 
 function idxById(id) { return state.isps.findIndex(i => i.id === id); }
 
-function deleteISP(idx) {
-  const isp = state.isps[idx];
-  if (!confirm(`Delete the ISP for ${isp.name}? This cannot be undone.`)) return;
-  saveDeletedFingerprint(isp);
-  state.isps.splice(idx, 1);
-  saveISPs();
-  renderDashboard();
-}
-function deleteISPById(id) { const i = idxById(id); if (i >= 0) deleteISP(i); }
+function deleteISPById(id) { /* delete disabled — ISPs can only be edited, not removed */ }
 
 function openISPPreview(idx) {
   state.previewIdx = idx;
