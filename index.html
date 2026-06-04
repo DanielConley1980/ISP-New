@@ -1267,25 +1267,9 @@ async function loadSheetData() {
       );
       // Show banner naming unrecognised records (separate try so it never breaks the merge)
       try {
-        const banner     = document.getElementById('sheet-unknown-banner');
-        const bannerList = document.getElementById('sheet-unknown-list');
-        if (banner && bannerList) {
-          if (unknownSheet.length) {
-            bannerList.innerHTML = unknownSheet.map(i => {
-              const safeId    = (i.id||'').replace(/['"]/g,'');
-              const safeArbor = String(i.arborId||'').replace(/['"]/g,'');
-              const safeName  = (i.name||'Unknown').replace(/['"<>]/g,'');
-              return `<button onclick="suppressSheetRecord('${safeId}','${safeArbor}','${safeName}')"
-                style="font-size:12px;padding:3px 10px;border:1px solid #c0a030;border-radius:20px;background:#fff8d0;cursor:pointer;color:#7A5F00">
-                ${safeName} (${safeArbor||'no ID'})
-              </button>`;
-            }).join('');
-            banner.style.display = 'block';
-          } else {
-            banner.style.display = 'none';
-          }
-        }
-      } catch(e) { console.warn('Banner update failed:', e); }
+        const banner = document.getElementById('sheet-unknown-banner');
+        if (banner) banner.style.display = 'none';
+      } catch(e) {}
       const sheetIds = new Set(knownSheet.map(i => i.id));
       const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
       state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
