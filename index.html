@@ -3173,7 +3173,7 @@ function vsStrategies(isp, idx) {
   const seatingLines = (isp.areas||[]).map(k => {
     const seat = (isp.seating&&isp.seating[k]) || '';
     if (!seat) return '';
-    return `<div style="font-size:13px;margin-bottom:3px"><span style="font-weight:700;color:#666"><span style="filter:grayscale(1)">${AREA_ICON[k]||''}</span> ${AREA_LABELS[k]}:</span> ${seat}</div>`;
+    return `<div style="font-size:13px;margin-bottom:3px">${seat}</div>`;
   }).filter(Boolean);
 
   const strategiesHTML = (isp.areas||[]).map(k => {
@@ -4158,7 +4158,7 @@ function buildISPPDF(src) {
   const seatingHtml = (src.areas||[]).map(k => {
     const seat = (src.seating&&src.seating[k])||''; if (!seat) return '';
     const c = CPDF[k]||'#555';
-    return `<div style="font-size:11px;margin-bottom:3px"><strong style="color:#666">${AREA_ICON[k]||''} ${AREA_LABELS[k]||k}:</strong> ${seat}</div>`;
+    return `<div style="font-size:11px;margin-bottom:3px">${seat}</div>`;
   }).filter(Boolean).join('') || '<p style="font-size:11px;color:#999;font-style:italic">No specific seating advice recorded.</p>';
 
   const th = (txt, w) => `<th style="padding:6px 8px;background:#0F6E56;color:white;text-align:left;font-size:11px;border:1px solid #0a5040${w?';width:'+w:''}">${txt}</th>`;
