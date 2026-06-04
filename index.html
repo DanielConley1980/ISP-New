@@ -1317,8 +1317,9 @@ async function loadSheetData() {
       state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
       // Restore MIS that was stripped by the merge (sheet records don't have isp.mis)
       state.isps.forEach(isp => {
-        if (!isp.mis || (!isp.mis.attThis && !isp.mis.bp && !isp.mis.susThis)) {
-          isp.mis = localMISById.get(isp.id) || localMISByArbor.get(String(isp.arborId||'')) || isp.mis || {};
+        if (!isp.mis || !isp.mis.attLast) {
+          const restored = localMISById.get(isp.id) || localMISByArbor.get(String(isp.arborId||''));
+          if (restored && restored.attLast) isp.mis = restored;
         }
       });
       applyDataFixes();
@@ -1644,9 +1645,9 @@ const state = {
     // One-time migration: copy mis from DEMO_ISPS into stored ISPs that lack it
     const demoById = new Map(DEMO_ISPS.filter(d=>d.mis).map(d=>[String(d.arborId), d.mis]));
     stored.forEach(isp => {
-      if (!isp.mis || (!isp.mis.attThis && !isp.mis.bp && !isp.mis.susThis)) {
-        const dm = demoById.get(String(isp.arborId||''));
-        if (dm) isp.mis = { ...dm };
+      const dm = demoById.get(String(isp.arborId||''));
+      if (dm && (!isp.mis || !isp.mis.attLast)) {
+        isp.mis = { ...dm };
       }
     });
     return stored;
@@ -3090,8 +3091,11 @@ function buildMISForView(isp) {
       return { attThis: attThisN !== null ? String(attThisN) : '', attLast: attLastN !== null ? String(attLastN) : '', susThis, susLast, bp, intEx };
     }
   }
-  // fallback: stored mis or bare attendance
+  // fallback: stored mis (prefer if it has attLast), else DEMO_ISPS, else bare attendance
   const o2 = isp.overview || {};
+  if (isp.mis && isp.mis.attLast) return isp.mis;
+  const demoMatch = DEMO_ISPS.find(d => String(d.arborId) === String(isp.arborId||'') || normName(d.name) === normName(isp.name||''));
+  if (demoMatch && demoMatch.mis) return demoMatch.mis;
   if (isp.mis && (isp.mis.attThis || isp.mis.bp || isp.mis.susThis)) return isp.mis;
   if (o2.attendance) return { attThis: o2.attendance, attLast: '', susThis: '', susLast: '', bp: '', intEx: '' };
   return null;
