@@ -4174,20 +4174,63 @@ function misSummaryBlock(mis, forPDF) {
       ${chipHtml}
     </div>`;
   }
-  const pd = forPDF ? '8px 10px' : '0';
-  const mb = forPDF ? '6px' : '10px';
-  const wrapStyle = forPDF
-    ? `margin-bottom:${mb};padding:${pd};background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px`
-    : `margin-bottom:${mb}`;
+
+  if (forPDF) {
+    const pd = '8px 10px', mb = '6px';
+    return `
+      <div style="margin-bottom:${mb};padding:${pd};background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px">
+        <div style="font-size:8px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px">Attendance and Behaviour</div>
+        ${(attThisN !== null) ? trow('Attendance', attLastN !== null ? fmtAtt(attLastN)+' last term' : '', fmtAtt(attThisN), chip(attDeltaStr, attDeltaCol)) : ''}
+        ${(mis.susThis) ? trow('Suspensions', mis.susLast ? mis.susLast+' last yr' : '', mis.susThis+' this yr', chip(susDiffStr, susDiffCol)) : ''}
+        ${(mis.bp || mis.intEx) ? `<div style="display:flex;gap:10px;margin-top:3px">
+          ${mis.bp ? `<div><span style="font-size:9px;color:#888;display:block">Behaviour pts</span><span style="font-size:11px;font-weight:700;color:${bpColor}">${mis.bp}</span></div>` : ''}
+          ${mis.intEx ? `<div><span style="font-size:9px;color:#888;display:block">Internal excl.</span><span style="font-size:11px;font-weight:700;color:#e67e22">${mis.intEx}</span></div>` : ''}
+        </div>` : ''}
+      </div>`;
+  }
+
+  // ISP view — 2×2 card grid
+  function misCard(title, content) {
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;background:var(--surface)">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px">${title}</div>
+      ${content}
+    </div>`;
+  }
+  function arrow() { return `<span style="color:#ccc;font-size:12px;margin:0 4px">→</span>`; }
+  function bigVal(v, col) { return `<span style="font-size:22px;font-weight:800;color:${col||'#333'}">${v}</span>`; }
+  function subLabel(t) { return `<div style="font-size:10px;color:var(--muted);margin-top:2px">${t}</div>`; }
+
+  const attContent = attThisN !== null ? `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      ${attLastN !== null ? `<div style="text-align:center">${bigVal(fmtAtt(attLastN),'#888')}${subLabel('Last term')}</div>${arrow()}` : ''}
+      <div style="text-align:center">${bigVal(fmtAtt(attThisN), attDelta !== null ? attDeltaCol : '#333')}${subLabel(attLastN !== null ? 'This term' : 'Attendance')}</div>
+      ${attDeltaStr ? chip(attDeltaStr, attDeltaCol) : ''}
+    </div>` : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
+
+  const susContent = mis.susThis ? `
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      ${!isNaN(susLastN) ? `<div style="text-align:center">${bigVal(mis.susLast,'#888')}${subLabel('Last year')}</div>${arrow()}` : ''}
+      <div style="text-align:center">${bigVal(mis.susThis, susDiff !== null && susDiff > 0 ? '#c0392b' : '#333')}${subLabel(!isNaN(susLastN) ? 'This year' : 'Suspensions')}</div>
+      ${susDiffStr ? chip(susDiffStr, susDiffCol) : ''}
+    </div>` : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
+
+  const bpContent = mis.bp
+    ? `<div>${bigVal(mis.bp, bpColor)}</div>`
+    : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
+
+  const intExContent = mis.intEx
+    ? `<div>${bigVal(mis.intEx, '#e67e22')}</div>`
+    : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
+
   return `
-    <div style="${wrapStyle}">
-      <div style="font-size:${forPDF?'8px':'10px'};font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:${forPDF?'5px':'8px'}">Attendance and Behaviour</div>
-      ${(attThisN !== null) ? trow('Attendance', attLastN !== null ? fmtAtt(attLastN)+' last term' : '', fmtAtt(attThisN), chip(attDeltaStr, attDeltaCol)) : ''}
-      ${(mis.susThis) ? trow('Suspensions', mis.susLast ? mis.susLast+' last yr' : '', mis.susThis+' this yr', chip(susDiffStr, susDiffCol)) : ''}
-      ${(mis.bp || mis.intEx) ? `<div style="display:flex;gap:${forPDF?'10px':'14px'};margin-top:${forPDF?'3px':'5px'}">
-        ${mis.bp ? `<div><span style="font-size:${forPDF?'9px':'10px'};color:#888;display:block">Behaviour pts</span><span style="font-size:${forPDF?'11px':'13px'};font-weight:700;color:${bpColor}">${mis.bp}</span></div>` : ''}
-        ${mis.intEx ? `<div><span style="font-size:${forPDF?'9px':'10px'};color:#888;display:block">Internal excl.</span><span style="font-size:${forPDF?'11px':'13px'};font-weight:700;color:#e67e22">${mis.intEx}</span></div>` : ''}
-      </div>` : ''}
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:12px">Attendance and Behaviour</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        ${misCard('Attendance', attContent)}
+        ${misCard('Suspensions', susContent)}
+        ${misCard('Behaviour Points', bpContent)}
+        ${misCard('Internal Exclusions', intExContent)}
+      </div>
     </div>`;
 }
 
