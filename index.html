@@ -3071,8 +3071,13 @@ function vsHeader(isp, idx) {
 }
 
 function buildMISForView(isp) {
-  // Live lookup from sheet students — same logic as student info card
   const arborId = String(isp.arborId || '');
+
+  // Demo students: always use DEMO_ISPS data directly — no storage/merge issues
+  const demoMatch = DEMO_ISPS.find(d => String(d.arborId) === arborId || (isp.name && normName(d.name) === normName(isp.name)));
+  if (demoMatch && demoMatch.mis) return demoMatch.mis;
+
+  // Real students: live lookup from sheet
   let ss = arborId ? (state.sheetStudents || []).find(x => String(x['Arbor ID']) === arborId || String(x['UPN']) === arborId) : null;
   if (!ss && isp.name) {
     const nn = normName(isp.name);
@@ -3091,12 +3096,9 @@ function buildMISForView(isp) {
       return { attThis: attThisN !== null ? String(attThisN) : '', attLast: attLastN !== null ? String(attLastN) : '', susThis, susLast, bp, intEx };
     }
   }
-  // fallback: stored mis (prefer if it has attLast), else DEMO_ISPS, else bare attendance
+  // Final fallback: stored mis or bare attendance
   const o2 = isp.overview || {};
-  if (isp.mis && isp.mis.attLast) return isp.mis;
-  const demoMatch = DEMO_ISPS.find(d => String(d.arborId) === String(isp.arborId||'') || normName(d.name) === normName(isp.name||''));
-  if (demoMatch && demoMatch.mis) return demoMatch.mis;
-  if (isp.mis && (isp.mis.attThis || isp.mis.bp || isp.mis.susThis)) return isp.mis;
+  if (isp.mis && (isp.mis.attLast || isp.mis.bp || isp.mis.susThis)) return isp.mis;
   if (o2.attendance) return { attThis: o2.attendance, attLast: '', susThis: '', susLast: '', bp: '', intEx: '' };
   return null;
 }
