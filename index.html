@@ -1638,7 +1638,19 @@ const state = {
   user: null,
   student: {},
   step: 0,
-  isps: loadStoredISPs() || DEMO_ISPS,
+  isps: (() => {
+    const stored = loadStoredISPs();
+    if (!stored) return DEMO_ISPS;
+    // One-time migration: copy mis from DEMO_ISPS into stored ISPs that lack it
+    const demoById = new Map(DEMO_ISPS.filter(d=>d.mis).map(d=>[String(d.arborId), d.mis]));
+    stored.forEach(isp => {
+      if (!isp.mis || (!isp.mis.attThis && !isp.mis.bp && !isp.mis.susThis)) {
+        const dm = demoById.get(String(isp.arborId||''));
+        if (dm) isp.mis = { ...dm };
+      }
+    });
+    return stored;
+  })(),
   viewingISP: null,
   sheetUrl: loadSheetUrl(),
   sheetStudents: [],
