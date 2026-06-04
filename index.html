@@ -1298,11 +1298,20 @@ async function loadSheetData() {
         const banner = document.getElementById('sheet-unknown-banner');
         if (banner) banner.style.display = 'none';
       } catch(e) {}
+      // Save local MIS data before merge — sheet records don't carry isp.mis
+      const localMISById     = new Map(state.isps.filter(i=>i.mis).map(i=>[i.id, i.mis]));
+      const localMISByArbor  = new Map(state.isps.filter(i=>i.mis&&i.arborId).map(i=>[String(i.arborId), i.mis]));
       const sheetIds = new Set(knownSheet.map(i => i.id));
       const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
       state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
+      // Restore MIS that was stripped by the merge (sheet records don't have isp.mis)
+      state.isps.forEach(isp => {
+        if (!isp.mis || (!isp.mis.attThis && !isp.mis.bp && !isp.mis.susThis)) {
+          isp.mis = localMISById.get(isp.id) || localMISByArbor.get(String(isp.arborId||'')) || isp.mis || {};
+        }
+      });
       applyDataFixes();
-      // Backfill MIS data from sheet students now that merge is complete
+      // Backfill any remaining gaps from sheet students
       backfillMISFromSheet();
       saveISPs();
       renderDashboard();
