@@ -4202,23 +4202,29 @@ function misSummaryBlock(mis, forPDF) {
   function subLabel(t) { return `<div style="font-size:10px;color:var(--muted);margin-top:2px">${t}</div>`; }
   function deltaChip(str, col) {
     if (!str) return '';
-    return `<span style="font-size:18px;font-weight:800;color:${col};background:${col}15;border:1px solid ${col}35;border-radius:20px;padding:3px 10px;white-space:nowrap">${str}</span>`;
+    return `<span style="font-size:15px;font-weight:700;color:${col};background:${col}15;border:1px solid ${col}35;border-radius:20px;padding:3px 10px;white-space:nowrap">${str}</span>`;
   }
 
   const bpDisplay = mis.bp ? (bpNum >= 0 ? `+${mis.bp}` : mis.bp) : null;
 
   const attContent = attThisN !== null ? `
-    <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
-      ${attLastN !== null ? `<div style="text-align:center">${bigVal(fmtAtt(attLastN),'#bbb')}${subLabel('Last term')}</div>${arrow()}` : ''}
-      <div style="text-align:center">${bigVal(fmtAtt(attThisN),'#333')}${subLabel(attLastN !== null ? 'This term' : 'Attendance')}</div>
-      ${attDeltaStr ? deltaChip(attDeltaStr, attDeltaCol) : ''}
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:nowrap">
+        ${attLastN !== null ? `<span style="font-size:22px;font-weight:800;color:#bbb">${fmtAtt(attLastN)}</span><span style="color:#ccc;font-size:12px">→</span>` : ''}
+        <span style="font-size:22px;font-weight:800;color:#333">${fmtAtt(attThisN)}</span>
+        ${attDeltaStr ? deltaChip(attDeltaStr, attDeltaCol) : ''}
+      </div>
+      ${attLastN !== null ? `<div style="display:flex;justify-content:center;gap:46px;margin-top:4px"><span style="font-size:10px;color:var(--muted)">Last term</span><span style="font-size:10px;color:var(--muted)">This term</span></div>` : `<div style="font-size:10px;color:var(--muted);margin-top:4px">Attendance</div>`}
     </div>` : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
 
   const susContent = mis.susThis ? `
-    <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
-      ${!isNaN(susLastN) ? `<div style="text-align:center">${bigVal(mis.susLast,'#bbb')}${subLabel('Last year')}</div>${arrow()}` : ''}
-      <div style="text-align:center">${bigVal(mis.susThis,'#333')}${subLabel(!isNaN(susLastN) ? 'This year' : 'Suspensions')}</div>
-      ${susDiffStr ? deltaChip(susDiffStr, susDiffCol) : ''}
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:nowrap">
+        ${!isNaN(susLastN) ? `<span style="font-size:22px;font-weight:800;color:#bbb">${mis.susLast}</span><span style="color:#ccc;font-size:12px">→</span>` : ''}
+        <span style="font-size:22px;font-weight:800;color:#333">${mis.susThis}</span>
+        ${susDiffStr ? deltaChip(susDiffStr, susDiffCol) : ''}
+      </div>
+      ${!isNaN(susLastN) ? `<div style="display:flex;justify-content:center;gap:46px;margin-top:4px"><span style="font-size:10px;color:var(--muted)">Last year</span><span style="font-size:10px;color:var(--muted)">This year</span></div>` : `<div style="font-size:10px;color:var(--muted);margin-top:4px">Suspensions</div>`}
     </div>` : `<span style="font-size:13px;color:var(--subtle);font-style:italic">No data</span>`;
 
   const bpContent = bpDisplay
