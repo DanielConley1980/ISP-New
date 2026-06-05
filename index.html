@@ -4202,14 +4202,14 @@ function misSummaryBlock(mis, forPDF) {
   function subLabel(t) { return `<div style="font-size:10px;color:var(--muted);margin-top:2px">${t}</div>`; }
   function deltaChip(str, col) {
     if (!str) return '';
-    return `<span style="font-size:15px;font-weight:700;color:${col};background:${col}15;border:1px solid ${col}35;border-radius:20px;padding:3px 10px;white-space:nowrap">${str}</span>`;
+    return `<span style="font-size:13px;font-weight:700;color:${col};background:${col}15;border:1px solid ${col}35;border-radius:20px;padding:3px 10px;white-space:nowrap">${str}</span>`;
   }
 
   const bpDisplay = mis.bp ? (bpNum >= 0 ? `+${mis.bp}` : mis.bp) : null;
 
   const attContent = attThisN !== null ? `
     <div>
-      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:nowrap">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap">
         ${attLastN !== null ? `<span style="font-size:22px;font-weight:800;color:#bbb">${fmtAtt(attLastN)}</span><span style="color:#ccc;font-size:12px">→</span>` : ''}
         <span style="font-size:22px;font-weight:800;color:#333">${fmtAtt(attThisN)}</span>
         ${attDeltaStr ? deltaChip(attDeltaStr, attDeltaCol) : ''}
@@ -4219,7 +4219,7 @@ function misSummaryBlock(mis, forPDF) {
 
   const susContent = mis.susThis ? `
     <div>
-      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:nowrap">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap">
         ${!isNaN(susLastN) ? `<span style="font-size:22px;font-weight:800;color:#bbb">${mis.susLast}</span><span style="color:#ccc;font-size:12px">→</span>` : ''}
         <span style="font-size:22px;font-weight:800;color:#333">${mis.susThis}</span>
         ${susDiffStr ? deltaChip(susDiffStr, susDiffCol) : ''}
