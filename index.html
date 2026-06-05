@@ -1858,7 +1858,7 @@ function deduplicateISPs(isps) {
     const ts = isp.lastEdited ? new Date(isp.lastEdited).getTime() : 0;
     if (existing) {
       const ets = existing.lastEdited ? new Date(existing.lastEdited).getTime() : 0;
-      if (ts > ets + 1000) { // local wins on ties — only replace if sheet is genuinely newer (>1s)
+      if (ts >= ets) { // local always wins ties — sheet version only kept if genuinely newer
         // Replace with newer version
         const ri = result.indexOf(existing);
         if (ri >= 0) result.splice(ri, 1, isp);
