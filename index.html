@@ -1312,9 +1312,8 @@ async function loadSheetData() {
       // Save local MIS data before merge — sheet records don't carry isp.mis
       const localMISById     = new Map(state.isps.filter(i=>i.mis).map(i=>[i.id, i.mis]));
       const localMISByArbor  = new Map(state.isps.filter(i=>i.mis&&i.arborId).map(i=>[String(i.arborId), i.mis]));
-      const sheetIds = new Set(knownSheet.map(i => i.id));
-      const localOnly = state.isps.filter(i => !sheetIds.has(i.id));
-      state.isps = deduplicateISPs([...knownSheet, ...localOnly]);
+      // Include ALL local ISPs in dedup so local edits beat stale sheet versions
+      state.isps = deduplicateISPs([...knownSheet, ...state.isps]);
       // Restore MIS that was stripped by the merge (sheet records don't have isp.mis)
       state.isps.forEach(isp => {
         if (!isp.mis || !isp.mis.attLast) {
