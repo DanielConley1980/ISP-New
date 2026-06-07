@@ -643,7 +643,7 @@
           <div class="avatar" id="isp-av">JD</div>
           <span id="isp-name-bar">Jane Doe</span>
         </div>
-        <button class="btn-ghost" onclick="if(confirm('Discard this ISP?'))showScreen(\'screen-dashboard\')">Discard</button>
+        <button class="btn-ghost" onclick="discardISP()">Discard</button>
       </div>
     </div>
     <div class="page-body">
@@ -1691,6 +1691,12 @@ const AREA_LABELS = {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+
+function discardISP() {
+  if (confirm('Discard this ISP?')) {
+    showScreen('screen-dashboard');
+  }
 }
 
 function doLogin() {
