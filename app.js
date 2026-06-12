@@ -3,6 +3,13 @@
    ───────────────────────────────────────────────────────────────────────── */
 const API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
 
+/* ── GOOGLE AUTH + BIGQUERY CONFIG ──────────────────────────────────────── */
+const GOOGLE_CLIENT_ID = '803676045433-p3sduma981d8c4atknvbmun0452m3ce.apps.googleusercontent.com';
+const GCP_PROJECT_ID   = 'coop-trust-data-management';
+const BQ_DATASET       = 'isp_database';
+const BQ_TABLE         = 'isps';
+let googleAccessToken  = null;
+
 // HTML-escape user-supplied strings before inserting into innerHTML
 function esc(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -681,6 +688,36 @@ function applyDataFixes() {
 function saveISPs() {
   applyDataFixes();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.isps)); } catch(e) {}
+  syncISPsToBigQuery();
+}
+
+function syncISPsToBigQuery() {
+  if (!googleAccessToken || !state.isps || state.isps.length === 0) return;
+  const rows = state.isps.map(isp => ({
+    insertId: String(isp.id || isp.arborId || Math.random()),
+    json: {
+      id:           String(isp.id || ''),
+      arbor_id:     String(isp.arborId || ''),
+      name:         isp.name || '',
+      school:       isp.school || '',
+      year_group:   isp.year || '',
+      sen_status:   isp.senStatus || '',
+      updated_at:   new Date().toISOString(),
+      updated_by:   (state.user && state.user.email) || '',
+      isp_json:     JSON.stringify(isp)
+    }
+  }));
+
+  fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${GCP_PROJECT_ID}/datasets/${BQ_DATASET}/tables/${BQ_TABLE}/insertAll`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${googleAccessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ rows, skipInvalidRows: false, ignoreUnknownValues: false })
+  }).catch(() => {
+    // Silent fail — data is still safe in localStorage
+  });
 }
 
 const DELETED_KEY = 'isp-deleted-fingerprints';
@@ -1201,26 +1238,69 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function doLogin() {
-  const emailInput = document.getElementById('login-email');
-  const email = emailInput ? emailInput.value.trim().toLowerCase() : 'dewan.chowdhury@coopacademies.co.uk';
-  
-  // Lookup in USER_ACCESS_DB
+function handleGoogleLogin(response) {
+  const errEl = document.getElementById('login-error');
+  try {
+    // Decode the JWT payload (no verification needed — Google already verified it)
+    const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const email = payload.email.toLowerCase();
+
+    if (!email.endsWith('@coopacademies.co.uk')) {
+      if (errEl) { errEl.textContent = 'Access is restricted to coopacademies.co.uk accounts.'; errEl.style.display = 'block'; }
+      return;
+    }
+
+    // Store access token for BigQuery calls
+    // GSI one-tap returns a credential (id_token), not an access token.
+    // We use the OAuth2 implicit flow to also get an access token for BigQuery.
+    requestBigQueryAccessToken(email, payload);
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'Sign-in failed. Please try again.'; errEl.style.display = 'block'; }
+  }
+}
+
+function requestBigQueryAccessToken(email, jwtPayload) {
+  // Use GSI token client to get an access token scoped for BigQuery
+  const tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'https://www.googleapis.com/auth/bigquery',
+    hint: email,
+    callback: (tokenResponse) => {
+      if (tokenResponse.error) {
+        const errEl = document.getElementById('login-error');
+        if (errEl) { errEl.textContent = 'Could not get BigQuery access. Contact your administrator.'; errEl.style.display = 'block'; }
+        return;
+      }
+      googleAccessToken = tokenResponse.access_token;
+      completeLogin(email, jwtPayload);
+    }
+  });
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function completeLogin(email, jwtPayload) {
   const allowed = (typeof USER_ACCESS_DB !== 'undefined' && USER_ACCESS_DB[email]) || [];
-  
-  // Create user name and initials from email
-  const cleanEmail = email.split('@')[0];
-  const nameParts = cleanEmail.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1));
-  const name = nameParts.join(' ');
-  const initials = nameParts.map(p => p.charAt(0)).join('');
-  
-  state.user = { name: name || 'Demo Staff', initials: initials || 'DS', email: email, allowedAcademies: allowed };
-  
+  const displayName = jwtPayload.name || email.split('@')[0];
+  const nameParts = displayName.split(' ');
+  const initials = nameParts.map(p => p.charAt(0).toUpperCase()).join('').slice(0,2);
+
+  state.user = {
+    name: displayName,
+    initials: initials || 'ST',
+    email: email,
+    allowedAcademies: allowed,
+    googlePicture: jwtPayload.picture || null
+  };
+
   applyDataFixes();
   updateUserUI();
   renderDashboard();
   showScreen('screen-dashboard');
   loadSheetData();
+}
+
+function doLogin() {
+  // Legacy fallback — no longer used, kept to avoid reference errors
 }
 
 function doSignOut() {
