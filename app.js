@@ -1284,8 +1284,8 @@ function handleGoogleLogin(response) {
       return;
     }
 
-    // Go straight to login — access rights determined by user_access sheet
-    completeLogin(email, payload);
+    // Get BigQuery access token then complete login
+    requestBigQueryAccessToken(email, payload);
   } catch(e) {
     if (errEl) { errEl.textContent = 'Sign-in failed. Please try again.'; errEl.style.display = 'block'; }
   }
