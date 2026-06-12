@@ -3,13 +3,6 @@
    ───────────────────────────────────────────────────────────────────────── */
 const API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
 
-/* ── GOOGLE AUTH + BIGQUERY CONFIG ──────────────────────────────────────── */
-const GOOGLE_CLIENT_ID = '803076045433-p3sduma981dl6c4atkvvbmun0452m3se.apps.googleusercontent.com';
-const GCP_PROJECT_ID   = 'coop-trust-data-management';
-const BQ_DATASET       = 'isp_database';
-const BQ_TABLE         = 'isps';
-let googleAccessToken  = null;
-
 // HTML-escape user-supplied strings before inserting into innerHTML
 function esc(str) {
   return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -690,70 +683,6 @@ function saveISPs() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.isps)); } catch(e) {}
 }
 
-async function loadStudentsFromBigQuery() {
-  if (!googleAccessToken) return;
-  const query = `SELECT * FROM \`${GCP_PROJECT_ID}.${BQ_DATASET}.${BQ_TABLE}\``;
-  try {
-    const resp = await fetch(
-      `https://bigquery.googleapis.com/bigquery/v2/projects/${GCP_PROJECT_ID}/queries`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${googleAccessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ query, useLegacySql: false, timeoutMs: 10000 })
-      }
-    );
-    const data = await resp.json();
-    if (!data.schema || !data.rows) return;
-
-    const fields = data.schema.fields.map(f => f.name);
-    const students = data.rows.map(row => {
-      const obj = {};
-      row.f.forEach((cell, i) => { obj[fields[i]] = cell.v; });
-      // Map BigQuery field names to the format the app uses internally
-      return {
-        'Arbor ID':                     obj.Arbor_ID || '',
-        'UPN':                          obj.UPN || '',
-        'School':                       obj.School || '',
-        'Pupil Name':                   obj.Pupil_Name || '',
-        'NC Year':                      obj.NC_Year || '',
-        'DOB':                          obj.Date_of_Birth || '',
-        'Form':                         obj.Form || '',
-        'Sex':                          obj.Sex || '',
-        'Key Stage':                    obj.Key_Stage || '',
-        'FSM':                          obj.FSM || '',
-        'PP':                           obj.PP || '',
-        'KSS/PKSS':                     obj.KSS_PKSS || '',
-        'SEN Status':                   obj.SEN_Status || '',
-        'Ethnicity':                    obj.Ethnicity || '',
-        'GRT':                          obj.GRT || '',
-        'EAL':                          obj.EAL || '',
-        'Behaviour Points':             obj.Behaviour_Points || '',
-        'Attendance This Term':         obj.Attendance_this_Term || '',
-        'Attendance Last Term':         obj.Attendance_Last_Term || '',
-        'Suspensions this Year':        obj.Suspensions_this_Year || '',
-        'Suspensions Last Year':        obj.Suspensions_Last_Year || '',
-        'Internal Exclusions this Year': obj.Internal_Exclusions_this_Year || '',
-        'Lead Responsible':             obj.Lead_Responsible || '',
-        _id: String(obj.Arbor_ID || obj.UPN || '')
-      };
-    });
-
-    // Merge BigQuery students into state — BigQuery data wins over mock/local
-    const studentMap = new Map((state.sheetStudents || []).map(s => [String(s['Arbor ID']), s]));
-    students.forEach(s => studentMap.set(String(s['Arbor ID']), s));
-    state.sheetStudents = Array.from(studentMap.values());
-
-    applyDataFixes();
-    backfillMISFromSheet();
-    renderDashboard();
-  } catch(e) {
-    // Silent fail — app continues with existing local/demo data
-  }
-}
-
 const DELETED_KEY = 'isp-deleted-fingerprints';
 function loadDeletedFingerprints() {
   try { return JSON.parse(localStorage.getItem(DELETED_KEY) || '[]'); } catch(e) { return []; }
@@ -1272,67 +1201,26 @@ function showScreen(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function handleGoogleLogin(response) {
-  const errEl = document.getElementById('login-error');
-  try {
-    // Decode the JWT payload (no verification needed — Google already verified it)
-    const payload = JSON.parse(atob(response.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-    const email = payload.email.toLowerCase();
-
-    if (!email.endsWith('@coopacademies.co.uk')) {
-      if (errEl) { errEl.textContent = 'Access is restricted to coopacademies.co.uk accounts.'; errEl.style.display = 'block'; }
-      return;
-    }
-
-    // Get BigQuery access token then complete login
-    requestBigQueryAccessToken(email, payload);
-  } catch(e) {
-    if (errEl) { errEl.textContent = 'Sign-in failed. Please try again.'; errEl.style.display = 'block'; }
-  }
-}
-
-function requestBigQueryAccessToken(email, jwtPayload) {
-  const tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/bigquery.readonly',
-    hint: email,
-    callback: (tokenResponse) => {
-      if (tokenResponse.error) {
-        const errEl = document.getElementById('login-error');
-        if (errEl) { errEl.textContent = 'Could not get BigQuery access. Contact your administrator.'; errEl.style.display = 'block'; }
-        return;
-      }
-      googleAccessToken = tokenResponse.access_token;
-      completeLogin(email, jwtPayload);
-    }
-  });
-  tokenClient.requestAccessToken({ prompt: '' });
-}
-
-function completeLogin(email, jwtPayload) {
+function doLogin() {
+  const emailInput = document.getElementById('login-email');
+  const email = emailInput ? emailInput.value.trim().toLowerCase() : 'dewan.chowdhury@coopacademies.co.uk';
+  
+  // Lookup in USER_ACCESS_DB
   const allowed = (typeof USER_ACCESS_DB !== 'undefined' && USER_ACCESS_DB[email]) || [];
-  const displayName = jwtPayload.name || email.split('@')[0];
-  const nameParts = displayName.split(' ');
-  const initials = nameParts.map(p => p.charAt(0).toUpperCase()).join('').slice(0,2);
-
-  state.user = {
-    name: displayName,
-    initials: initials || 'ST',
-    email: email,
-    allowedAcademies: allowed,
-    googlePicture: jwtPayload.picture || null
-  };
-
+  
+  // Create user name and initials from email
+  const cleanEmail = email.split('@')[0];
+  const nameParts = cleanEmail.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1));
+  const name = nameParts.join(' ');
+  const initials = nameParts.map(p => p.charAt(0)).join('');
+  
+  state.user = { name: name || 'Demo Staff', initials: initials || 'DS', email: email, allowedAcademies: allowed };
+  
   applyDataFixes();
   updateUserUI();
   renderDashboard();
   showScreen('screen-dashboard');
   loadSheetData();
-  loadStudentsFromBigQuery();
-}
-
-function doLogin() {
-  // Legacy fallback — no longer used, kept to avoid reference errors
 }
 
 function doSignOut() {
