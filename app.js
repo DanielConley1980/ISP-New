@@ -1284,10 +1284,8 @@ function handleGoogleLogin(response) {
       return;
     }
 
-    // Store access token for BigQuery calls
-    // GSI one-tap returns a credential (id_token), not an access token.
-    // We use the OAuth2 implicit flow to also get an access token for BigQuery.
-    requestBigQueryAccessToken(email, payload);
+    // Go straight to login — access rights determined by user_access sheet
+    completeLogin(email, payload);
   } catch(e) {
     if (errEl) { errEl.textContent = 'Sign-in failed. Please try again.'; errEl.style.display = 'block'; }
   }
