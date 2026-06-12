@@ -688,36 +688,70 @@ function applyDataFixes() {
 function saveISPs() {
   applyDataFixes();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.isps)); } catch(e) {}
-  syncISPsToBigQuery();
 }
 
-function syncISPsToBigQuery() {
-  if (!googleAccessToken || !state.isps || state.isps.length === 0) return;
-  const rows = state.isps.map(isp => ({
-    insertId: String(isp.id || isp.arborId || Math.random()),
-    json: {
-      id:           String(isp.id || ''),
-      arbor_id:     String(isp.arborId || ''),
-      name:         isp.name || '',
-      school:       isp.school || '',
-      year_group:   isp.year || '',
-      sen_status:   isp.senStatus || '',
-      updated_at:   new Date().toISOString(),
-      updated_by:   (state.user && state.user.email) || '',
-      isp_json:     JSON.stringify(isp)
-    }
-  }));
+async function loadStudentsFromBigQuery() {
+  if (!googleAccessToken) return;
+  const query = `SELECT * FROM \`${GCP_PROJECT_ID}.${BQ_DATASET}.${BQ_TABLE}\``;
+  try {
+    const resp = await fetch(
+      `https://bigquery.googleapis.com/bigquery/v2/projects/${GCP_PROJECT_ID}/queries`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${googleAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query, useLegacySql: false, timeoutMs: 10000 })
+      }
+    );
+    const data = await resp.json();
+    if (!data.schema || !data.rows) return;
 
-  fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${GCP_PROJECT_ID}/datasets/${BQ_DATASET}/tables/${BQ_TABLE}/insertAll`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${googleAccessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ rows, skipInvalidRows: false, ignoreUnknownValues: false })
-  }).catch(() => {
-    // Silent fail — data is still safe in localStorage
-  });
+    const fields = data.schema.fields.map(f => f.name);
+    const students = data.rows.map(row => {
+      const obj = {};
+      row.f.forEach((cell, i) => { obj[fields[i]] = cell.v; });
+      // Map BigQuery field names to the format the app uses internally
+      return {
+        'Arbor ID':                     obj.Arbor_ID || '',
+        'UPN':                          obj.UPN || '',
+        'School':                       obj.School || '',
+        'Pupil Name':                   obj.Pupil_Name || '',
+        'NC Year':                      obj.NC_Year || '',
+        'DOB':                          obj.Date_of_Birth || '',
+        'Form':                         obj.Form || '',
+        'Sex':                          obj.Sex || '',
+        'Key Stage':                    obj.Key_Stage || '',
+        'FSM':                          obj.FSM || '',
+        'PP':                           obj.PP || '',
+        'KSS/PKSS':                     obj.KSS_PKSS || '',
+        'SEN Status':                   obj.SEN_Status || '',
+        'Ethnicity':                    obj.Ethnicity || '',
+        'GRT':                          obj.GRT || '',
+        'EAL':                          obj.EAL || '',
+        'Behaviour Points':             obj.Behaviour_Points || '',
+        'Attendance This Term':         obj.Attendance_this_Term || '',
+        'Attendance Last Term':         obj.Attendance_Last_Term || '',
+        'Suspensions this Year':        obj.Suspensions_this_Year || '',
+        'Suspensions Last Year':        obj.Suspensions_Last_Year || '',
+        'Internal Exclusions this Year': obj.Internal_Exclusions_this_Year || '',
+        'Lead Responsible':             obj.Lead_Responsible || '',
+        _id: String(obj.Arbor_ID || obj.UPN || '')
+      };
+    });
+
+    // Merge BigQuery students into state — BigQuery data wins over mock/local
+    const studentMap = new Map((state.sheetStudents || []).map(s => [String(s['Arbor ID']), s]));
+    students.forEach(s => studentMap.set(String(s['Arbor ID']), s));
+    state.sheetStudents = Array.from(studentMap.values());
+
+    applyDataFixes();
+    backfillMISFromSheet();
+    renderDashboard();
+  } catch(e) {
+    // Silent fail — app continues with existing local/demo data
+  }
 }
 
 const DELETED_KEY = 'isp-deleted-fingerprints';
@@ -1260,10 +1294,9 @@ function handleGoogleLogin(response) {
 }
 
 function requestBigQueryAccessToken(email, jwtPayload) {
-  // Use GSI token client to get an access token scoped for BigQuery
   const tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
-    scope: 'https://www.googleapis.com/auth/bigquery',
+    scope: 'https://www.googleapis.com/auth/bigquery.readonly',
     hint: email,
     callback: (tokenResponse) => {
       if (tokenResponse.error) {
@@ -1297,6 +1330,7 @@ function completeLogin(email, jwtPayload) {
   renderDashboard();
   showScreen('screen-dashboard');
   loadSheetData();
+  loadStudentsFromBigQuery();
 }
 
 function doLogin() {
